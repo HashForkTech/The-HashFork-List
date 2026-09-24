@@ -1,0 +1,473 @@
+'use client';
+
+import { useCallback, useState, type FormEvent } from 'react';
+import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { adminApi } from '@/lib/api/admin-client';
+import { AdminLayout } from '@/components/admin/AdminLayout';
+import { ConfirmDialog, type ConfirmOptions } from '@/components/admin/ConfirmDialog';
+import { DataTools } from '@/components/admin/DataTools';
+import { ItemForm } from '@/components/admin/ItemForm';
+import { LinkIcons } from '@/components/LinkIcons';
+import type { Category, CategoryWithCount, ItemPayload, ListItem } from '@/lib/types';
+
+type Notice = { kind: 'info' | 'error'; text: string };
+type PendingConfirm = ConfirmOptions & { onConfirm: () => void | Promise<void> };
+
+type AdminDashboardProps = {
+  initialCategories: CategoryWithCount[];
+  initialItems: ListItem[];
+};
+
+/**
+ * Lightweight content management screen:
+ *   Categories → create / rename / delete (items are kept on delete)
+ *   Items      → create / edit / delete
+ *   Data       → export / import backups
+ */
+export function AdminDashboard({ initialCategories, initialItems }: AdminDashboardProps) {
+  const [categories, setCategories] = useState<CategoryWithCount[]>(initialCategories);
+  const [items, setItems] = useState<ListItem[]>(initialItems);
+  const [notice, setNotice] = useState<Notice | null>(null);
+  const [confirm, setConfirm] = useState<PendingConfirm | null>(null);
+  const [confirmBusy, setConfirmBusy] = useState(false);
+
+  const [showCategoryForm, setShowCategoryForm] = useState(false);
+  const [categoryName, setCategoryName] = useState('');
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+  const [categoryIssues, setCategoryIssues] = useState<string[]>([]);
+
+  const [showItemForm, setShowItemForm] = useState(false);
+  const [editingItem, setEditingItem] = useState<ListItem | null>(null);
+  const [itemIssues, setItemIssues] = useState<string[]>([]);
+  const [itemBusy, setItemBusy] = useState(false);
+
+  const categoryById = new Map(categories.map((category) => [category.id, category]));
+
+  const refresh = useCallback(async () => {
+    const [categoryResult, itemResult] = await Promise.all([
+      adminApi.listCategories(),
+      adminApi.listItems(),
+    ]);
+    if (categoryResult.ok) setCategories(categoryResult.data.categories);
+    if (itemResult.ok) setItems(itemResult.data.items);
+  }, []);
+
+  /* ------------------------------- categories ------------------------------ */
+
+  async function createCategory(name: string): Promise<Category | null> {
+    setCategoryIssues([]);
+    const result = await adminApi.createCategory(name);
+    if (!result.ok) {
+      setCategoryIssues(result.issues?.length ? result.issues : [result.message]);
+      setNotice({ kind: 'error', text: result.message });
+      return null;
+    }
+    await refresh();
+    setNotice({ kind: 'info', text: `Catégorie « ${result.data.category.name} » créée.` });
+    return result.data.category;
+  }
+
+  async function handleCreateCategory(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const name = categoryName.trim();
+    if (!name) {
+      setCategoryIssues(['Le nom de la catégorie est obligatoire.']);
+      return;
+    }
+    const created = await createCategory(name);
+    if (created) {
+      setCategoryName('');
+      setShowCategoryForm(false);
+    }
+  }
+
+  async function handleRenameCategory(event: FormEvent<HTMLFormElement>, id: string) {
+    event.preventDefault();
+    const name = renameValue.trim();
+    if (!name) {
+      setCategoryIssues(['Le nom de la catégorie est obligatoire.']);
+      return;
+    }
+    const result = await adminApi.updateCategory(id, name);
+    if (!result.ok) {
+      setNotice({ kind: 'error', text: result.message });
+      return;
+    }
+    setEditingCategory(null);
+    await refresh();
+    setNotice({ kind: 'info', text: 'Catégorie renommée.' });
+  }
+
+  function askDeleteCategory(category: CategoryWithCount) {
+    const count = category.itemCount;
+    setConfirm({
+      title: 'Supprimer cette catégorie ?',
+      confirmLabel: 'Supprimer la catégorie',
+      message: (
+        <>
+          <p>
+            La catégorie «&nbsp;{category.name}&nbsp;» sera supprimée. Cette action ne peut pas être
+            annulée facilement.
+          </p>
+          {count > 0 ? (
+            <p className="mt-2 text-paper/55">
+              Ses {count} ressource{count > 1 ? 's' : ''} seront <strong>conservées</strong>, mais
+              perdront leur catégorie.
+            </p>
+          ) : null}
+        </>
+      ),
+      onConfirm: async () => {
+        setConfirmBusy(true);
+        const result = await adminApi.deleteCategory(category.id);
+        setConfirmBusy(false);
+        setConfirm(null);
+        if (!result.ok) {
+          setNotice({ kind: 'error', text: result.message });
+          return;
+        }
+        await refresh();
+        setNotice({
+          kind: 'info',
+          text:
+            result.data.detachedItems > 0
+              ? `Catégorie supprimée — ${result.data.detachedItems} ressource(s) conservée(s) sans catégorie.`
+              : 'Catégorie supprimée.',
+        });
+      },
+    });
+  }
+
+  /* --------------------------------- items -------------------------------- */
+
+  async function handleSaveItem(payload: ItemPayload) {
+    setItemBusy(true);
+    setItemIssues([]);
+    const result = editingItem
+      ? await adminApi.updateItem(editingItem.id, payload)
+      : await adminApi.createItem(payload);
+    setItemBusy(false);
+
+    if (!result.ok) {
+      setItemIssues(result.issues?.length ? result.issues : [result.message]);
+      return;
+    }
+    setShowItemForm(false);
+    setEditingItem(null);
+    await refresh();
+    setNotice({
+      kind: 'info',
+      text: editingItem ? 'Ressource mise à jour.' : 'Ressource ajoutée.',
+    });
+  }
+
+  function askDeleteItem(item: ListItem) {
+    const label = item.name?.trim() || 'cette ressource sans nom';
+    setConfirm({
+      title: 'Supprimer cette ressource ?',
+      confirmLabel: 'Supprimer',
+      message: (
+        <>
+          <p>
+            «&nbsp;{label}&nbsp;» sera définitivement supprimée de la liste.
+          </p>
+          <p className="mt-2 text-paper/50">
+            Cette action ne peut pas être annulée (sauf restauration d’une sauvegarde).
+          </p>
+        </>
+      ),
+      onConfirm: async () => {
+        setConfirmBusy(true);
+        const result = await adminApi.deleteItem(item.id);
+        setConfirmBusy(false);
+        setConfirm(null);
+        if (!result.ok) {
+          setNotice({ kind: 'error', text: result.message });
+          return;
+        }
+        await refresh();
+        setNotice({ kind: 'info', text: 'Ressource supprimée.' });
+      },
+    });
+  }
+
+  /* --------------------------------- render -------------------------------- */
+
+  return (
+    <AdminLayout>
+      <main className="mx-auto w-full max-w-content px-4 pb-24 sm:px-6">
+        <div className="py-6">
+          <p className="section-title">Administration</p>
+          <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-paper">
+            Tableau de bord
+          </h1>
+          <p className="mt-1.5 text-xs text-paper/35">
+            Espace sans mot de passe (aucun certificat SSL requis). Si cette instance est exposée à
+            des personnes non fiables, protégez /admin et /api au niveau du serveur — voir README.
+          </p>
+        </div>
+
+        {notice ? (
+          <p
+            role="status"
+            aria-live="polite"
+            className={`rounded-sm border px-3.5 py-2.5 text-sm ${
+              notice.kind === 'error'
+                ? 'border-paper/30 bg-paper/5 text-paper/85'
+                : 'border-paper/10 bg-paper/[0.03] text-paper/65'
+            }`}
+          >
+            {notice.kind === 'error' ? '⚠ ' : '✓ '}
+            {notice.text}
+          </p>
+        ) : null}
+
+        {/* ------------------------------ categories ---------------------------- */}
+        <section aria-labelledby="categories-title" className="mt-10">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 id="categories-title" className="section-title">
+              Catégories
+            </h2>
+            <button
+              type="button"
+              className="btn"
+              onClick={() => {
+                setShowCategoryForm((value) => !value);
+                setCategoryIssues([]);
+              }}
+              aria-expanded={showCategoryForm}
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              Nouvelle catégorie
+            </button>
+          </div>
+
+          {showCategoryForm ? (
+            <form onSubmit={(event) => void handleCreateCategory(event)} className="panel mt-4 p-4">
+              <label className="field-label" htmlFor="category-name">
+                Nom de la catégorie
+              </label>
+              <div className="flex flex-wrap gap-2">
+                <input
+                  id="category-name"
+                  className="field-input min-w-0 flex-1"
+                  maxLength={60}
+                  autoFocus
+                  placeholder="LLM, Outils, Applications…"
+                  value={categoryName}
+                  onChange={(event) => setCategoryName(event.target.value)}
+                />
+                <button type="submit" className="btn btn-primary">
+                  Ajouter
+                </button>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => setShowCategoryForm(false)}
+                >
+                  Annuler
+                </button>
+              </div>
+              {categoryIssues.length > 0 ? (
+                <ul role="alert" className="field-error space-y-1">
+                  {categoryIssues.map((issue) => (
+                    <li key={issue}>⚠ {issue}</li>
+                  ))}
+                </ul>
+              ) : null}
+            </form>
+          ) : null}
+
+          {categories.length === 0 ? (
+            <p className="panel mt-4 px-4 py-8 text-center text-sm text-paper/45">
+              Aucune catégorie pour l’instant. La liste publique fonctionne aussi sans catégorie.
+            </p>
+          ) : (
+            <ul className="mt-4 space-y-2">
+              {categories.map((category) => (
+                <li
+                  key={category.id}
+                  className="panel flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:gap-4 sm:px-4"
+                >
+                  {editingCategory?.id === category.id ? (
+                    <form
+                      onSubmit={(event) => void handleRenameCategory(event, category.id)}
+                      className="flex w-full flex-wrap gap-2"
+                    >
+                      <label className="sr-only" htmlFor={`rename-${category.id}`}>
+                        Nouveau nom de la catégorie
+                      </label>
+                      <input
+                        id={`rename-${category.id}`}
+                        className="field-input min-w-0 flex-1"
+                        maxLength={60}
+                        autoFocus
+                        value={renameValue}
+                        onChange={(event) => setRenameValue(event.target.value)}
+                      />
+                      <button type="submit" className="btn btn-primary">
+                        Enregistrer
+                      </button>
+                      <button type="button" className="btn" onClick={() => setEditingCategory(null)}>
+                        Annuler
+                      </button>
+                    </form>
+                  ) : (
+                    <>
+                      <span className="min-w-0 flex-1 break-words text-sm font-medium text-paper">
+                        {category.name}
+                      </span>
+                      <span className="shrink-0 text-xs text-paper/40">
+                        {category.itemCount} ressource{category.itemCount > 1 ? 's' : ''}
+                      </span>
+                      <div className="flex shrink-0 gap-2">
+                        <button
+                          type="button"
+                          className="btn"
+                          onClick={() => {
+                            setEditingCategory(category);
+                            setRenameValue(category.name);
+                          }}
+                        >
+                          <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                          Renommer
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-danger"
+                          onClick={() => askDeleteCategory(category)}
+                        >
+                          <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                          Supprimer
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+
+        {/* -------------------------------- items ------------------------------- */}
+        <section aria-labelledby="items-title" className="mt-14">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 id="items-title" className="section-title">
+              Ressources
+            </h2>
+            <button
+              type="button"
+              className="btn"
+              onClick={() => {
+                setEditingItem(null);
+                setItemIssues([]);
+                setShowItemForm((value) => !value);
+              }}
+              aria-expanded={showItemForm}
+            >
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              Ajouter une ressource
+            </button>
+          </div>
+
+          {showItemForm ? (
+            <ItemForm
+              key={editingItem?.id ?? 'new'}
+              categories={categories}
+              initial={editingItem}
+              submitting={itemBusy}
+              serverIssues={itemIssues}
+              onCreateCategory={createCategory}
+              onSubmit={handleSaveItem}
+              onCancel={() => {
+                setShowItemForm(false);
+                setEditingItem(null);
+                setItemIssues([]);
+              }}
+            />
+          ) : null}
+
+          {items.length === 0 ? (
+            <p className="panel mt-4 px-4 py-8 text-center text-sm text-paper/45">
+              Aucune ressource ajoutée pour le moment.
+            </p>
+          ) : (
+            <ul className="mt-4 space-y-2">
+              {items.map((item) => {
+                const category = item.categoryId
+                  ? categoryById.get(item.categoryId)
+                  : undefined;
+                return (
+                  <li
+                    key={item.id}
+                    className="panel flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between"
+                  >
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                        <h3 className="min-w-0 break-words text-base font-medium tracking-tight text-paper">
+                          {item.name?.trim() || (
+                            <span className="font-normal italic text-paper/40">
+                              Ressource sans nom
+                            </span>
+                          )}
+                        </h3>
+                        {category ? (
+                          <span className="shrink-0 rounded-sm border border-paper/15 px-2 py-0.5 text-[11px] text-paper/55">
+                            {category.name}
+                          </span>
+                        ) : null}
+                      </div>
+                      {item.description?.trim() ? (
+                        <p className="mt-1.5 line-clamp-2 max-w-2xl break-words text-sm leading-relaxed text-paper/55">
+                          {item.description}
+                        </p>
+                      ) : null}
+                      <div className="mt-2">
+                        <LinkIcons item={item} />
+                      </div>
+                    </div>
+                    <div className="flex shrink-0 gap-2">
+                      <button
+                        type="button"
+                        className="btn"
+                        onClick={() => {
+                          setEditingItem(item);
+                          setItemIssues([]);
+                          setShowItemForm(true);
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }}
+                      >
+                        <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
+                        Modifier
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-danger"
+                        onClick={() => askDeleteItem(item)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                        Supprimer
+                      </button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </section>
+
+        <DataTools onImported={() => void refresh()} onNotice={setNotice} />
+      </main>
+
+      {confirm ? (
+        <ConfirmDialog
+          options={confirm}
+          busy={confirmBusy}
+          onConfirm={() => void confirm.onConfirm()}
+          onCancel={() => setConfirm(null)}
+        />
+      ) : null}
+    </AdminLayout>
+  );
+}
