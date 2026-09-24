@@ -29,6 +29,6 @@ export async function GET(req: Request): Promise<Response> {
     });
   } catch (error) {
     logger.error('export failed', { error: (error as Error).message });
-    return jsonError(500, 'server_error', 'Une erreur interne est survenue. Veuillez réessayer.');
+    return jsonError(500, 'server_error', 'An internal error occurred. Please try again.');
   }
 }

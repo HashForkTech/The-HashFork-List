@@ -29,14 +29,14 @@ export async function POST(req: Request): Promise<Response> {
     if (!body.ok) {
       const message =
         body.reason === 'too_large'
-          ? 'Fichier trop volumineux (8 Mo maximum).'
-          : 'Requête invalide : données illisibles.';
+          ? 'File too large (8 MB maximum).'
+          : 'Invalid request: unreadable data.';
       return jsonError(400, 'bad_request', message);
     }
 
     const parsed = importRequestSchema.safeParse(body.data);
     if (!parsed.success) {
-      return jsonError(422, 'validation', 'Le fichier de sauvegarde est invalide.', {
+      return jsonError(422, 'validation', 'The backup file is invalid.', {
         issues: formatIssues(parsed.error),
       });
     }
@@ -46,7 +46,7 @@ export async function POST(req: Request): Promise<Response> {
       return jsonError(
         422,
         'confirmation_required',
-        'L’importation en mode « Remplacer » efface les données actuelles : confirmation explicite requise.',
+        'Importing in "Replace" mode erases the current data: explicit confirmation is required.',
       );
     }
 
@@ -55,6 +55,6 @@ export async function POST(req: Request): Promise<Response> {
     return jsonOk({ ok: true, summary });
   } catch (error) {
     logger.error('import failed', { error: (error as Error).message });
-    return jsonError(500, 'server_error', 'Une erreur interne est survenue. Veuillez réessayer.');
+    return jsonError(500, 'server_error', 'An internal error occurred. Please try again.');
   }
 }

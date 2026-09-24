@@ -6,6 +6,7 @@ export const LIMITS = {
   id: 64,
   name: 200,
   description: 4000,
+  comment: 2000,
   url: 2048,
   category: 60,
   backupCategories: 5000,

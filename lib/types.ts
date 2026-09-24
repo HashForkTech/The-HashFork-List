@@ -23,6 +23,12 @@ export type ListItem = {
   websiteUrl?: string | null;
   huggingFaceUrl?: string | null;
   youtubeUrl?: string | null;
+  /** Whether the admin marked the resource as tested. */
+  tested: boolean;
+  /** Star notation from 0 to 5 (0 = not rated). */
+  rating: number;
+  /** Optional admin comment (shown as a hover popup on the public list). */
+  comment?: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -36,10 +42,13 @@ export type ItemPayload = {
   websiteUrl?: string | null;
   huggingFaceUrl?: string | null;
   youtubeUrl?: string | null;
+  tested?: boolean | null;
+  rating?: number | null;
+  comment?: string | null;
 };
 
 export const BACKUP_FORMAT = 'the-hashfork-list/backup';
-export const BACKUP_VERSION = 1;
+export const BACKUP_VERSION = 2;
 
 export type BackupFile = {
   format: typeof BACKUP_FORMAT;

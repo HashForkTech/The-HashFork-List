@@ -11,6 +11,9 @@ type ItemRow = {
   website_url: string | null;
   huggingface_url: string | null;
   youtube_url: string | null;
+  tested: number;
+  rating: number;
+  comment: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -25,6 +28,9 @@ function mapItem(row: ItemRow): ListItem {
     websiteUrl: row.website_url,
     huggingFaceUrl: row.huggingface_url,
     youtubeUrl: row.youtube_url,
+    tested: Boolean(row.tested),
+    rating: row.rating ?? 0,
+    comment: row.comment,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -55,13 +61,21 @@ export function getItem(db: DB, id: string): ListItem | null {
   return row ? mapItem(row) : null;
 }
 
+/** Ratings are stored as an integer 0–5 (0 = not rated). */
+function normalizeRating(value: number | null | undefined): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return 0;
+  return Math.min(5, Math.max(0, Math.round(value)));
+}
+
 export function createItem(db: DB, payload: ItemPayload, id: string = randomUUID()): ListItem {
   const now = new Date().toISOString();
   db.prepare(
     `INSERT INTO items (id, category_id, name, description, github_url, website_url,
-                        huggingface_url, youtube_url, created_at, updated_at)
+                        huggingface_url, youtube_url, tested, rating, comment,
+                        created_at, updated_at)
      VALUES (@id, @categoryId, @name, @description, @githubUrl, @websiteUrl,
-             @huggingFaceUrl, @youtubeUrl, @createdAt, @updatedAt)`,
+             @huggingFaceUrl, @youtubeUrl, @tested, @rating, @comment,
+             @createdAt, @updatedAt)`,
   ).run({
     id,
     categoryId: payload.categoryId ?? null,
@@ -71,6 +85,9 @@ export function createItem(db: DB, payload: ItemPayload, id: string = randomUUID
     websiteUrl: payload.websiteUrl ?? null,
     huggingFaceUrl: payload.huggingFaceUrl ?? null,
     youtubeUrl: payload.youtubeUrl ?? null,
+    tested: payload.tested ? 1 : 0,
+    rating: normalizeRating(payload.rating),
+    comment: payload.comment ?? null,
     createdAt: now,
     updatedAt: now,
   });
@@ -89,6 +106,9 @@ export function updateItem(db: DB, id: string, payload: ItemPayload): ListItem |
     huggingFaceUrl:
       payload.huggingFaceUrl !== undefined ? payload.huggingFaceUrl : existing.huggingFaceUrl,
     youtubeUrl: payload.youtubeUrl !== undefined ? payload.youtubeUrl : existing.youtubeUrl,
+    tested: payload.tested !== undefined ? payload.tested : existing.tested,
+    rating: payload.rating !== undefined ? payload.rating : existing.rating,
+    comment: payload.comment !== undefined ? payload.comment : existing.comment,
   };
   db.prepare(
     `UPDATE items
@@ -99,6 +119,9 @@ export function updateItem(db: DB, id: string, payload: ItemPayload): ListItem |
             website_url = @websiteUrl,
             huggingface_url = @huggingFaceUrl,
             youtube_url = @youtubeUrl,
+            tested = @tested,
+            rating = @rating,
+            comment = @comment,
             updated_at = @updatedAt
       WHERE id = @id`,
   ).run({
@@ -110,6 +133,9 @@ export function updateItem(db: DB, id: string, payload: ItemPayload): ListItem |
     websiteUrl: merged.websiteUrl ?? null,
     huggingFaceUrl: merged.huggingFaceUrl ?? null,
     youtubeUrl: merged.youtubeUrl ?? null,
+    tested: merged.tested ? 1 : 0,
+    rating: normalizeRating(merged.rating),
+    comment: merged.comment ?? null,
     updatedAt: new Date().toISOString(),
   });
   return getItem(db, id);
@@ -132,9 +158,11 @@ export function insertItemRaw(db: DB, item: ListItem): boolean {
   const info = db
     .prepare(
       `INSERT INTO items (id, category_id, name, description, github_url, website_url,
-                          huggingface_url, youtube_url, created_at, updated_at)
+                          huggingface_url, youtube_url, tested, rating, comment,
+                          created_at, updated_at)
        VALUES (@id, @categoryId, @name, @description, @githubUrl, @websiteUrl,
-               @huggingFaceUrl, @youtubeUrl, @createdAt, @updatedAt)`,
+               @huggingFaceUrl, @youtubeUrl, @tested, @rating, @comment,
+               @createdAt, @updatedAt)`,
     )
     .run({
       id: item.id,
@@ -145,6 +173,9 @@ export function insertItemRaw(db: DB, item: ListItem): boolean {
       websiteUrl: item.websiteUrl ?? null,
       huggingFaceUrl: item.huggingFaceUrl ?? null,
       youtubeUrl: item.youtubeUrl ?? null,
+      tested: item.tested ? 1 : 0,
+      rating: normalizeRating(item.rating),
+      comment: item.comment ?? null,
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,
     });

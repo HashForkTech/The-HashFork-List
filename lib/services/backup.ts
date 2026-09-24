@@ -92,6 +92,9 @@ export function toParsedBackup(input: BackupPayloadInput): ParsedBackup {
       name: item.name ?? null,
       description: item.description ?? null,
       ...urls,
+      tested: item.tested ?? false,
+      rating: item.rating ?? 0,
+      comment: item.comment ?? null,
       createdAt: validIsoOrNow(item.createdAt),
       updatedAt: validIsoOrNow(item.updatedAt),
     };

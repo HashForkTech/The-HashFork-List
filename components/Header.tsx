@@ -1,15 +1,15 @@
 import Link from 'next/link';
 
-/** Public site header: title (left) — Admin (right). */
+/** Public site header: title (centered on the page) — Admin (right). */
 export function Header() {
   return (
     <header className="sticky top-0 z-30 border-b border-paper/10 bg-ink/90 backdrop-blur supports-[backdrop-filter]:bg-ink/75">
-      <div className="mx-auto flex h-14 max-w-content items-center gap-3 px-4 sm:h-16 sm:px-6">
+      <div className="relative mx-auto flex h-14 max-w-content items-center px-4 sm:h-16 sm:px-6">
         <Link
           href="/"
-          className="min-w-0 truncate text-base font-semibold tracking-tight text-paper transition-opacity hover:opacity-90 sm:text-xl"
+          className="absolute left-1/2 -translate-x-1/2 whitespace-nowrap text-base font-semibold tracking-tight text-paper transition-opacity hover:opacity-90 sm:text-xl"
         >
-          The Hashfork List
+          The HashFork List
         </Link>
         <Link
           href="/admin"

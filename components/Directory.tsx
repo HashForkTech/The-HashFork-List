@@ -20,7 +20,7 @@ type DirectoryProps = {
 export function Directory({
   categories,
   children,
-  emptyMessage = 'Aucune ressource dans cette catégorie.',
+  emptyMessage = 'No resources in this category.',
 }: DirectoryProps) {
   const [activeId, setActiveId] = useState<string>('all');
   const [visibleCount, setVisibleCount] = useState<number | null>(null);
@@ -43,16 +43,16 @@ export function Directory({
   }, [activeId, applyFilter]);
 
   return (
-    <section aria-label="Liste des ressources">
+    <section aria-label="Resource list">
       {categories.length > 0 ? (
-        <nav aria-label="Filtrer par catégorie" className="sticky top-14 z-20 -mx-4 bg-ink/90 px-4 py-3 backdrop-blur sm:top-16 sm:mx-0 sm:rounded-none sm:bg-transparent sm:px-0 sm:backdrop-blur-none">
+        <nav aria-label="Filter by category" className="sticky top-14 z-20 -mx-4 bg-ink/90 px-4 py-3 backdrop-blur sm:top-16 sm:mx-0 sm:rounded-none sm:bg-transparent sm:px-0 sm:backdrop-blur-none">
           <ul className="no-scrollbar flex items-center gap-2 overflow-x-auto pb-0.5">
             <li className="shrink-0">
               <FilterButton
                 active={activeId === 'all'}
                 onClick={() => setActiveId('all')}
               >
-                Tout
+                All
               </FilterButton>
             </li>
             {categories.map((category) => (

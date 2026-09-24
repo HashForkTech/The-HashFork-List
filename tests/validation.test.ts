@@ -85,7 +85,7 @@ describe('itemInputSchema', () => {
     expect(parsed.success).toBe(false);
     if (!parsed.success) {
       const issues = formatIssues(parsed.error);
-      expect(issues.join(' ')).toContain('Lien GitHub');
+      expect(issues.join(' ')).toContain('GitHub link');
     }
   });
 
@@ -95,6 +95,28 @@ describe('itemInputSchema', () => {
 
   it('rejects over-long names', () => {
     expect(itemInputSchema.safeParse({ name: 'x'.repeat(LIMITS.name + 1) }).success).toBe(false);
+  });
+
+  it('accepts tested, rating and comment', () => {
+    const parsed = itemInputSchema.safeParse({ tested: true, rating: 4, comment: 'Solid tool.' });
+    expect(parsed.success).toBe(true);
+    if (parsed.success) {
+      expect(parsed.data.tested).toBe(true);
+      expect(parsed.data.rating).toBe(4);
+      expect(parsed.data.comment).toBe('Solid tool.');
+    }
+  });
+
+  it('rejects a rating outside 0–5', () => {
+    expect(itemInputSchema.safeParse({ rating: 6 }).success).toBe(false);
+    expect(itemInputSchema.safeParse({ rating: -1 }).success).toBe(false);
+    expect(itemInputSchema.safeParse({ rating: 2.5 }).success).toBe(false);
+  });
+
+  it('rejects an over-long comment', () => {
+    expect(itemInputSchema.safeParse({ comment: 'x'.repeat(LIMITS.comment + 1) }).success).toBe(
+      false,
+    );
   });
 
   it('does not carry unknown keys through', () => {

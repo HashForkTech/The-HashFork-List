@@ -1,22 +1,23 @@
 'use client';
 
 import { useState, type FormEvent } from 'react';
+import { Star } from 'lucide-react';
 import type { Category, CategoryWithCount, ItemPayload, ListItem } from '@/lib/types';
 import { normalizeUrl } from '@/lib/validation/url';
 
 const URL_FIELDS = [
-  { key: 'githubUrl', label: 'Lien GitHub', placeholder: 'https://github.com/exemple/projet' },
-  { key: 'websiteUrl', label: 'Site web', placeholder: 'https://exemple.com' },
+  { key: 'websiteUrl', label: 'Website', placeholder: 'https://example.com' },
+  { key: 'githubUrl', label: 'GitHub link', placeholder: 'https://github.com/example/project' },
   {
     key: 'huggingFaceUrl',
-    label: 'Lien Hugging Face',
-    placeholder: 'https://huggingface.co/exemple/modele',
+    label: 'Hugging Face link',
+    placeholder: 'https://huggingface.co/example/model',
   },
-  { key: 'youtubeUrl', label: 'Lien YouTube', placeholder: 'https://youtube.com/watch?v=…' },
+  { key: 'youtubeUrl', label: 'YouTube link', placeholder: 'https://youtube.com/watch?v=…' },
 ] as const;
 
 type UrlFieldKey = (typeof URL_FIELDS)[number]['key'];
-type FieldKey = 'categoryId' | 'name' | 'description' | UrlFieldKey;
+type FieldKey = 'categoryId' | 'name' | 'description' | 'comment' | UrlFieldKey;
 type Fields = Record<FieldKey, string>;
 
 const NEW_CATEGORY_VALUE = '__new__';
@@ -36,8 +37,9 @@ function initialFields(initial?: ListItem | null): Fields {
     categoryId: initial?.categoryId ?? '',
     name: initial?.name ?? '',
     description: initial?.description ?? '',
-    githubUrl: initial?.githubUrl ?? '',
+    comment: initial?.comment ?? '',
     websiteUrl: initial?.websiteUrl ?? '',
+    githubUrl: initial?.githubUrl ?? '',
     huggingFaceUrl: initial?.huggingFaceUrl ?? '',
     youtubeUrl: initial?.youtubeUrl ?? '',
   };
@@ -47,6 +49,9 @@ function initialFields(initial?: ListItem | null): Fields {
  * Create/edit form for a list item. EVERY field is optional — an item can be
  * saved with a single field, or even completely empty (with a clear notice).
  * URLs are validated and normalized before submission.
+ *
+ * Review metadata: a "Tested" checkbox, a 1–5 star rating and a comment
+ * (shown as a hover popup next to "Comment" on the public list).
  */
 export function ItemForm({
   categories,
@@ -58,6 +63,10 @@ export function ItemForm({
   onCancel,
 }: ItemFormProps) {
   const [fields, setFields] = useState<Fields>(() => initialFields(initial));
+  const [tested, setTested] = useState<boolean>(() => Boolean(initial?.tested));
+  const [rating, setRating] = useState<number>(() =>
+    Math.min(5, Math.max(0, Math.round(initial?.rating ?? 0))),
+  );
   const [creatingCategory, setCreatingCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [categoryBusy, setCategoryBusy] = useState(false);
@@ -67,11 +76,14 @@ export function ItemForm({
   const isEmpty =
     fields.name.trim() === '' &&
     fields.description.trim() === '' &&
+    fields.comment.trim() === '' &&
     fields.categoryId === '' &&
-    fields.githubUrl.trim() === '' &&
     fields.websiteUrl.trim() === '' &&
+    fields.githubUrl.trim() === '' &&
     fields.huggingFaceUrl.trim() === '' &&
-    fields.youtubeUrl.trim() === '';
+    fields.youtubeUrl.trim() === '' &&
+    !tested &&
+    rating === 0;
 
   function setField(key: FieldKey, value: string) {
     setFields((current) => ({ ...current, [key]: value }));
@@ -83,7 +95,7 @@ export function ItemForm({
     if (value && !normalizeUrl(value)) {
       setErrors((current) => ({
         ...current,
-        [key]: 'URL invalide (ex. https://exemple.com).',
+        [key]: 'Invalid URL (e.g. https://example.com).',
       }));
       return false;
     }
@@ -111,7 +123,7 @@ export function ItemForm({
     for (const urlField of URL_FIELDS) {
       const value = fields[urlField.key].trim();
       if (value && !normalizeUrl(value)) {
-        nextErrors[urlField.key] = 'URL invalide (ex. https://exemple.com).';
+        nextErrors[urlField.key] = 'Invalid URL (e.g. https://example.com).';
       }
     }
     setErrors(nextErrors);
@@ -132,10 +144,13 @@ export function ItemForm({
       categoryId,
       name: fields.name.trim() ? fields.name.trim() : null,
       description: fields.description.trim() ? fields.description.trim() : null,
-      githubUrl: fields.githubUrl.trim() ? normalizeUrl(fields.githubUrl) : null,
+      comment: fields.comment.trim() ? fields.comment.trim() : null,
       websiteUrl: fields.websiteUrl.trim() ? normalizeUrl(fields.websiteUrl) : null,
+      githubUrl: fields.githubUrl.trim() ? normalizeUrl(fields.githubUrl) : null,
       huggingFaceUrl: fields.huggingFaceUrl.trim() ? normalizeUrl(fields.huggingFaceUrl) : null,
       youtubeUrl: fields.youtubeUrl.trim() ? normalizeUrl(fields.youtubeUrl) : null,
+      tested,
+      rating: rating > 0 ? rating : null,
     };
 
     await onSubmit(payload);
@@ -145,20 +160,20 @@ export function ItemForm({
     <form
       onSubmit={handleSubmit}
       className="panel mt-4 p-4 sm:p-5"
-      aria-label={isEditing ? 'Modifier la ressource' : 'Ajouter une ressource'}
+      aria-label={isEditing ? 'Edit resource' : 'Add a resource'}
       noValidate
     >
       <h3 className="text-base font-semibold tracking-tight text-paper">
-        {isEditing ? 'Modifier la ressource' : 'Ajouter une ressource'}
+        {isEditing ? 'Edit resource' : 'Add a resource'}
       </h3>
       <p className="field-hint">
-        Tous les champs sont facultatifs&nbsp;: renseignez uniquement ce qui est utile.
+        All fields are optional: fill in only what is useful.
       </p>
 
       <div className="mt-5 grid gap-5 sm:grid-cols-2">
         <div>
           <label className="field-label" htmlFor="item-category">
-            Catégorie
+            Category
           </label>
           <select
             id="item-category"
@@ -170,24 +185,24 @@ export function ItemForm({
               setField('categoryId', value);
             }}
           >
-            <option value="">Aucune catégorie</option>
+            <option value="">No category</option>
             {categories.map((category) => (
               <option key={category.id} value={category.id}>
                 {category.name}
               </option>
             ))}
-            <option value={NEW_CATEGORY_VALUE}>＋ Nouvelle catégorie…</option>
+            <option value={NEW_CATEGORY_VALUE}>＋ New category…</option>
           </select>
 
           {creatingCategory ? (
             <div className="mt-2 flex flex-wrap gap-2">
               <label className="sr-only" htmlFor="item-new-category">
-                Nom de la nouvelle catégorie
+                New category name
               </label>
               <input
                 id="item-new-category"
                 className="field-input min-w-0 flex-1"
-                placeholder="Nom de la catégorie"
+                placeholder="Category name"
                 maxLength={60}
                 autoFocus
                 value={newCategoryName}
@@ -199,7 +214,7 @@ export function ItemForm({
                 onClick={handleCreateCategory}
                 disabled={categoryBusy || newCategoryName.trim() === ''}
               >
-                {categoryBusy ? 'Création…' : 'Créer'}
+                {categoryBusy ? 'Creating…' : 'Create'}
               </button>
             </div>
           ) : null}
@@ -207,7 +222,7 @@ export function ItemForm({
 
         <div>
           <label className="field-label" htmlFor="item-name">
-            Nom
+            Name
           </label>
           <input
             id="item-name"
@@ -221,14 +236,14 @@ export function ItemForm({
 
         <div className="sm:col-span-2">
           <label className="field-label" htmlFor="item-description">
-            Description (en français)
+            Description
           </label>
           <textarea
             id="item-description"
             className="field-input"
             rows={3}
             maxLength={4000}
-            placeholder="Exécutez des grands modèles de langage en local grâce à une interface en ligne de commande."
+            placeholder="Runs large language models locally through a command-line interface."
             value={fields.description}
             onChange={(event) => setField('description', event.target.value)}
           />
@@ -254,16 +269,85 @@ export function ItemForm({
             {errors[urlField.key] ? (
               <p className="field-error">⚠ {errors[urlField.key]}</p>
             ) : (
-              <p className="field-hint">Icône affichée uniquement si l’URL est renseignée.</p>
+              <p className="field-hint">The icon is shown only when the URL is filled in.</p>
             )}
           </div>
         ))}
+
+        <div>
+          <span className="field-label" id="item-rating-label">
+            Rating
+          </span>
+          <div
+            role="group"
+            aria-labelledby="item-rating-label"
+            className="mt-1.5 flex items-center gap-1"
+          >
+            {[1, 2, 3, 4, 5].map((value) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setRating((current) => (current === value ? 0 : value))}
+                aria-pressed={rating >= value}
+                aria-label={`${value} star${value > 1 ? 's' : ''}`}
+                title={
+                  rating === value
+                    ? 'Click again to clear the rating'
+                    : `Rate ${value} star${value > 1 ? 's' : ''}`
+                }
+                className="rounded-sm p-1 transition-transform duration-150 hover:scale-110"
+              >
+                <Star
+                  className={`h-6 w-6 ${
+                    rating >= value ? 'fill-yellow-400 text-yellow-400' : 'text-paper/30'
+                  }`}
+                  aria-hidden="true"
+                />
+              </button>
+            ))}
+            <span className="ml-2 text-xs text-paper/50">
+              {rating > 0 ? `${rating} / 5` : 'Not rated'}
+            </span>
+          </div>
+          <p className="field-hint">
+            Click a star to rate from 1 to 5. Click the same star again to clear.
+          </p>
+        </div>
+
+        <div className="sm:col-span-2">
+          <label className="flex items-center gap-2.5 text-sm text-paper/85">
+            <input
+              id="item-tested"
+              type="checkbox"
+              className="h-4 w-4 accent-paper/70"
+              checked={tested}
+              onChange={(event) => setTested(event.target.checked)}
+            />
+            Tested
+          </label>
+          <p className="field-hint">Check this box when the resource has been tested.</p>
+        </div>
+
+        <div className="sm:col-span-2">
+          <label className="field-label" htmlFor="item-comment">
+            Comment
+          </label>
+          <textarea
+            id="item-comment"
+            className="field-input"
+            rows={3}
+            maxLength={2000}
+            placeholder="Short note shown when hovering “Comment” on the public list."
+            value={fields.comment}
+            onChange={(event) => setField('comment', event.target.value)}
+          />
+        </div>
       </div>
 
       {isEmpty ? (
         <p className="field-hint mt-5">
-          ⓘ Tous les champs sont vides&nbsp;: cette ressource sera enregistrée sans nom, sans
-          description, sans catégorie et sans lien.
+          ⓘ All fields are empty: this resource will be saved without a name, description,
+          category, link, rating or comment.
         </p>
       ) : null}
 
@@ -277,10 +361,10 @@ export function ItemForm({
 
       <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row">
         <button type="submit" className="btn btn-primary" disabled={submitting}>
-          {submitting ? 'Enregistrement…' : 'Enregistrer'}
+          {submitting ? 'Saving…' : 'Save'}
         </button>
         <button type="button" className="btn" onClick={onCancel} disabled={submitting}>
-          Annuler
+          Cancel
         </button>
       </div>
     </form>

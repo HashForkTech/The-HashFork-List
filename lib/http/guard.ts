@@ -13,5 +13,5 @@ export function rejectUntrustedMutation(req: Request): Response | null {
   const check = checkMutationRequest(req);
   if (check.ok) return null;
   logger.warn('blocked cross-origin mutation attempt', { reason: check.reason });
-  return jsonError(403, 'forbidden', 'Requête refusée. Rechargez la page et réessayez.');
+  return jsonError(403, 'forbidden', 'Request refused. Reload the page and try again.');
 }

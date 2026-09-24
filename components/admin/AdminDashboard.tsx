@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useState, type FormEvent } from 'react';
-import { Pencil, Plus, Trash2 } from 'lucide-react';
+import { Pencil, Plus, Star, Trash2 } from 'lucide-react';
 import { adminApi } from '@/lib/api/admin-client';
 import { AdminLayout } from '@/components/admin/AdminLayout';
 import { ConfirmDialog, type ConfirmOptions } from '@/components/admin/ConfirmDialog';
@@ -17,6 +17,24 @@ type AdminDashboardProps = {
   initialCategories: CategoryWithCount[];
   initialItems: ListItem[];
 };
+
+function StarRow({ rating }: { rating: number }) {
+  return (
+    <span
+      className="inline-flex shrink-0 items-center gap-0.5"
+      role="img"
+      aria-label={`Rated ${rating} out of 5 stars`}
+    >
+      {Array.from({ length: rating }, (_, index) => (
+        <Star
+          key={index}
+          className="h-3 w-3 fill-yellow-400 text-yellow-400"
+          aria-hidden="true"
+        />
+      ))}
+    </span>
+  );
+}
 
 /**
  * Lightweight content management screen:
@@ -64,7 +82,7 @@ export function AdminDashboard({ initialCategories, initialItems }: AdminDashboa
       return null;
     }
     await refresh();
-    setNotice({ kind: 'info', text: `Catégorie « ${result.data.category.name} » créée.` });
+    setNotice({ kind: 'info', text: `Category "${result.data.category.name}" created.` });
     return result.data.category;
   }
 
@@ -72,7 +90,7 @@ export function AdminDashboard({ initialCategories, initialItems }: AdminDashboa
     event.preventDefault();
     const name = categoryName.trim();
     if (!name) {
-      setCategoryIssues(['Le nom de la catégorie est obligatoire.']);
+      setCategoryIssues(['The category name is required.']);
       return;
     }
     const created = await createCategory(name);
@@ -86,7 +104,7 @@ export function AdminDashboard({ initialCategories, initialItems }: AdminDashboa
     event.preventDefault();
     const name = renameValue.trim();
     if (!name) {
-      setCategoryIssues(['Le nom de la catégorie est obligatoire.']);
+      setCategoryIssues(['The category name is required.']);
       return;
     }
     const result = await adminApi.updateCategory(id, name);
@@ -96,24 +114,23 @@ export function AdminDashboard({ initialCategories, initialItems }: AdminDashboa
     }
     setEditingCategory(null);
     await refresh();
-    setNotice({ kind: 'info', text: 'Catégorie renommée.' });
+    setNotice({ kind: 'info', text: 'Category renamed.' });
   }
 
   function askDeleteCategory(category: CategoryWithCount) {
     const count = category.itemCount;
     setConfirm({
-      title: 'Supprimer cette catégorie ?',
-      confirmLabel: 'Supprimer la catégorie',
+      title: 'Delete this category?',
+      confirmLabel: 'Delete category',
       message: (
         <>
           <p>
-            La catégorie «&nbsp;{category.name}&nbsp;» sera supprimée. Cette action ne peut pas être
-            annulée facilement.
+            The category “{category.name}” will be deleted. This action cannot easily be undone.
           </p>
           {count > 0 ? (
             <p className="mt-2 text-paper/55">
-              Ses {count} ressource{count > 1 ? 's' : ''} seront <strong>conservées</strong>, mais
-              perdront leur catégorie.
+              Its {count} resource{count > 1 ? 's' : ''} will be <strong>kept</strong>, but will
+              lose their category.
             </p>
           ) : null}
         </>
@@ -132,8 +149,8 @@ export function AdminDashboard({ initialCategories, initialItems }: AdminDashboa
           kind: 'info',
           text:
             result.data.detachedItems > 0
-              ? `Catégorie supprimée — ${result.data.detachedItems} ressource(s) conservée(s) sans catégorie.`
-              : 'Catégorie supprimée.',
+              ? `Category deleted — ${result.data.detachedItems} resource(s) kept without a category.`
+              : 'Category deleted.',
         });
       },
     });
@@ -158,22 +175,22 @@ export function AdminDashboard({ initialCategories, initialItems }: AdminDashboa
     await refresh();
     setNotice({
       kind: 'info',
-      text: editingItem ? 'Ressource mise à jour.' : 'Ressource ajoutée.',
+      text: editingItem ? 'Resource updated.' : 'Resource added.',
     });
   }
 
   function askDeleteItem(item: ListItem) {
-    const label = item.name?.trim() || 'cette ressource sans nom';
+    const label = item.name?.trim() || 'this unnamed resource';
     setConfirm({
-      title: 'Supprimer cette ressource ?',
-      confirmLabel: 'Supprimer',
+      title: 'Delete this resource?',
+      confirmLabel: 'Delete',
       message: (
         <>
           <p>
-            «&nbsp;{label}&nbsp;» sera définitivement supprimée de la liste.
+            “{label}” will be permanently removed from the list.
           </p>
           <p className="mt-2 text-paper/50">
-            Cette action ne peut pas être annulée (sauf restauration d’une sauvegarde).
+            This action cannot be undone (except by restoring a backup).
           </p>
         </>
       ),
@@ -187,7 +204,7 @@ export function AdminDashboard({ initialCategories, initialItems }: AdminDashboa
           return;
         }
         await refresh();
-        setNotice({ kind: 'info', text: 'Ressource supprimée.' });
+        setNotice({ kind: 'info', text: 'Resource deleted.' });
       },
     });
   }
@@ -200,11 +217,11 @@ export function AdminDashboard({ initialCategories, initialItems }: AdminDashboa
         <div className="py-6">
           <p className="section-title">Administration</p>
           <h1 className="mt-1.5 text-2xl font-semibold tracking-tight text-paper">
-            Tableau de bord
+            Dashboard
           </h1>
           <p className="mt-1.5 text-xs text-paper/35">
-            Espace sans mot de passe (aucun certificat SSL requis). Si cette instance est exposée à
-            des personnes non fiables, protégez /admin et /api au niveau du serveur — voir README.
+            Password-free area (no SSL certificate required). If this instance is exposed to
+            untrusted people, protect /admin and /api at the server level — see README.
           </p>
         </div>
 
@@ -227,7 +244,7 @@ export function AdminDashboard({ initialCategories, initialItems }: AdminDashboa
         <section aria-labelledby="categories-title" className="mt-10">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 id="categories-title" className="section-title">
-              Catégories
+              Categories
             </h2>
             <button
               type="button"
@@ -239,14 +256,14 @@ export function AdminDashboard({ initialCategories, initialItems }: AdminDashboa
               aria-expanded={showCategoryForm}
             >
               <Plus className="h-4 w-4" aria-hidden="true" />
-              Nouvelle catégorie
+              New category
             </button>
           </div>
 
           {showCategoryForm ? (
             <form onSubmit={(event) => void handleCreateCategory(event)} className="panel mt-4 p-4">
               <label className="field-label" htmlFor="category-name">
-                Nom de la catégorie
+                Category name
               </label>
               <div className="flex flex-wrap gap-2">
                 <input
@@ -254,19 +271,19 @@ export function AdminDashboard({ initialCategories, initialItems }: AdminDashboa
                   className="field-input min-w-0 flex-1"
                   maxLength={60}
                   autoFocus
-                  placeholder="LLM, Outils, Applications…"
+                  placeholder="LLMs, Tools, Applications…"
                   value={categoryName}
                   onChange={(event) => setCategoryName(event.target.value)}
                 />
                 <button type="submit" className="btn btn-primary">
-                  Ajouter
+                  Add
                 </button>
                 <button
                   type="button"
                   className="btn"
                   onClick={() => setShowCategoryForm(false)}
                 >
-                  Annuler
+                  Cancel
                 </button>
               </div>
               {categoryIssues.length > 0 ? (
@@ -281,7 +298,7 @@ export function AdminDashboard({ initialCategories, initialItems }: AdminDashboa
 
           {categories.length === 0 ? (
             <p className="panel mt-4 px-4 py-8 text-center text-sm text-paper/45">
-              Aucune catégorie pour l’instant. La liste publique fonctionne aussi sans catégorie.
+              No categories yet. The public list also works without categories.
             </p>
           ) : (
             <ul className="mt-4 space-y-2">
@@ -296,7 +313,7 @@ export function AdminDashboard({ initialCategories, initialItems }: AdminDashboa
                       className="flex w-full flex-wrap gap-2"
                     >
                       <label className="sr-only" htmlFor={`rename-${category.id}`}>
-                        Nouveau nom de la catégorie
+                        New category name
                       </label>
                       <input
                         id={`rename-${category.id}`}
@@ -307,10 +324,10 @@ export function AdminDashboard({ initialCategories, initialItems }: AdminDashboa
                         onChange={(event) => setRenameValue(event.target.value)}
                       />
                       <button type="submit" className="btn btn-primary">
-                        Enregistrer
+                        Save
                       </button>
                       <button type="button" className="btn" onClick={() => setEditingCategory(null)}>
-                        Annuler
+                        Cancel
                       </button>
                     </form>
                   ) : (
@@ -319,7 +336,7 @@ export function AdminDashboard({ initialCategories, initialItems }: AdminDashboa
                         {category.name}
                       </span>
                       <span className="shrink-0 text-xs text-paper/40">
-                        {category.itemCount} ressource{category.itemCount > 1 ? 's' : ''}
+                        {category.itemCount} resource{category.itemCount === 1 ? '' : 's'}
                       </span>
                       <div className="flex shrink-0 gap-2">
                         <button
@@ -331,7 +348,7 @@ export function AdminDashboard({ initialCategories, initialItems }: AdminDashboa
                           }}
                         >
                           <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
-                          Renommer
+                          Rename
                         </button>
                         <button
                           type="button"
@@ -339,7 +356,7 @@ export function AdminDashboard({ initialCategories, initialItems }: AdminDashboa
                           onClick={() => askDeleteCategory(category)}
                         >
                           <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                          Supprimer
+                          Delete
                         </button>
                       </div>
                     </>
@@ -354,7 +371,7 @@ export function AdminDashboard({ initialCategories, initialItems }: AdminDashboa
         <section aria-labelledby="items-title" className="mt-14">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 id="items-title" className="section-title">
-              Ressources
+              Resources
             </h2>
             <button
               type="button"
@@ -367,7 +384,7 @@ export function AdminDashboard({ initialCategories, initialItems }: AdminDashboa
               aria-expanded={showItemForm}
             >
               <Plus className="h-4 w-4" aria-hidden="true" />
-              Ajouter une ressource
+              Add a resource
             </button>
           </div>
 
@@ -390,7 +407,7 @@ export function AdminDashboard({ initialCategories, initialItems }: AdminDashboa
 
           {items.length === 0 ? (
             <p className="panel mt-4 px-4 py-8 text-center text-sm text-paper/45">
-              Aucune ressource ajoutée pour le moment.
+              No resources added yet.
             </p>
           ) : (
             <ul className="mt-4 space-y-2">
@@ -398,6 +415,7 @@ export function AdminDashboard({ initialCategories, initialItems }: AdminDashboa
                 const category = item.categoryId
                   ? categoryById.get(item.categoryId)
                   : undefined;
+                const rating = Math.min(5, Math.max(0, Math.round(item.rating ?? 0)));
                 return (
                   <li
                     key={item.id}
@@ -408,7 +426,7 @@ export function AdminDashboard({ initialCategories, initialItems }: AdminDashboa
                         <h3 className="min-w-0 break-words text-base font-medium tracking-tight text-paper">
                           {item.name?.trim() || (
                             <span className="font-normal italic text-paper/40">
-                              Ressource sans nom
+                              Unnamed resource
                             </span>
                           )}
                         </h3>
@@ -417,10 +435,21 @@ export function AdminDashboard({ initialCategories, initialItems }: AdminDashboa
                             {category.name}
                           </span>
                         ) : null}
+                        {item.tested ? (
+                          <span className="shrink-0 rounded-sm border border-paper/15 px-2 py-0.5 text-[11px] text-paper/55">
+                            Tested
+                          </span>
+                        ) : null}
+                        {rating > 0 ? <StarRow rating={rating} /> : null}
                       </div>
                       {item.description?.trim() ? (
                         <p className="mt-1.5 line-clamp-2 max-w-2xl break-words text-sm leading-relaxed text-paper/55">
                           {item.description}
+                        </p>
+                      ) : null}
+                      {item.comment?.trim() ? (
+                        <p className="mt-1.5 line-clamp-2 max-w-2xl break-words text-xs leading-relaxed text-paper/45">
+                          💬 {item.comment}
                         </p>
                       ) : null}
                       <div className="mt-2">
@@ -439,7 +468,7 @@ export function AdminDashboard({ initialCategories, initialItems }: AdminDashboa
                         }}
                       >
                         <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
-                        Modifier
+                        Edit
                       </button>
                       <button
                         type="button"
@@ -447,7 +476,7 @@ export function AdminDashboard({ initialCategories, initialItems }: AdminDashboa
                         onClick={() => askDeleteItem(item)}
                       >
                         <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                        Supprimer
+                        Delete
                       </button>
                     </div>
                   </li>

@@ -45,31 +45,31 @@ export function DataTools({ onImported, onNotice }: DataToolsProps) {
           !Array.isArray(candidate.items)
         ) {
           setError(
-            'Fichier de sauvegarde invalide : il doit contenir les listes « categories » et « items ».',
+            'Invalid backup file: it must contain the "categories" and "items" lists.',
           );
           return;
         }
         setFileData({ categories: candidate.categories, items: candidate.items });
         setFileName(file.name);
       } catch {
-        setError('Fichier illisible : ce n’est pas un JSON valide.');
+        setError('Unreadable file: this is not valid JSON.');
       }
     };
-    reader.onerror = () => setError('Impossible de lire ce fichier.');
+    reader.onerror = () => setError('Unable to read this file.');
     reader.readAsText(file);
   }
 
   function describeSummary(summary: ImportSummaryLike): string {
     const parts = [
-      `${summary.categories.created} catégorie(s) importée(s)`,
-      `${summary.items.created} ressource(s) importée(s)`,
+      `${summary.categories.created} category/categories imported`,
+      `${summary.items.created} resource(s) imported`,
     ];
-    if (summary.categories.skipped > 0) parts.push(`${summary.categories.skipped} ignorée(s)`);
-    if (summary.items.skipped > 0) parts.push(`${summary.items.skipped} ignorée(s)`);
+    if (summary.categories.skipped > 0) parts.push(`${summary.categories.skipped} skipped`);
+    if (summary.items.skipped > 0) parts.push(`${summary.items.skipped} skipped`);
     if (summary.items.unclassified > 0) {
-      parts.push(`${summary.items.unclassified} ressource(s) sans catégorie`);
+      parts.push(`${summary.items.unclassified} resource(s) without a category`);
     }
-    return `Import terminé (${summary.mode === 'replace' ? 'remplacement' : 'fusion'}) : ${parts.join(', ')}.`;
+    return `Import finished (${summary.mode === 'replace' ? 'replace' : 'merge'}): ${parts.join(', ')}.`;
   }
 
   async function runImport() {
@@ -106,31 +106,31 @@ export function DataTools({ onImported, onNotice }: DataToolsProps) {
   return (
     <section aria-labelledby="data-title" className="mt-14">
       <h2 id="data-title" className="section-title">
-        Données &amp; sauvegarde
+        Data &amp; backup
       </h2>
       <div className="mt-4 grid gap-6 lg:grid-cols-2">
         <div className="panel p-4 sm:p-5">
-          <h3 className="text-base font-medium tracking-tight text-paper">Exporter</h3>
+          <h3 className="text-base font-medium tracking-tight text-paper">Export</h3>
           <p className="field-hint">
-            Télécharge toutes les catégories et ressources dans un fichier JSON (à conserver en
-            lieu sûr, et à importer pour restaurer).
+            Downloads every category and resource as a JSON file (keep it somewhere safe, and
+            import it to restore).
           </p>
           <a href="/api/export" download className="btn mt-4">
             <Download className="h-4 w-4" aria-hidden="true" />
-            Exporter les données (JSON)
+            Export data (JSON)
           </a>
         </div>
 
         <div className="panel p-4 sm:p-5">
-          <h3 className="text-base font-medium tracking-tight text-paper">Importer</h3>
+          <h3 className="text-base font-medium tracking-tight text-paper">Import</h3>
           <p className="field-hint">
-            Restaure une sauvegarde JSON. Les données existantes ne sont jamais écrasées sans
-            confirmation explicite.
+            Restores a JSON backup. Existing data is never overwritten without explicit
+            confirmation.
           </p>
 
           <div className="mt-4">
             <label className="field-label" htmlFor="import-file">
-              Fichier de sauvegarde (JSON)
+              Backup file (JSON)
             </label>
             <input
               ref={fileInputRef}
@@ -142,15 +142,15 @@ export function DataTools({ onImported, onNotice }: DataToolsProps) {
             />
             {fileName ? (
               <p className="field-hint">
-                Fichier sélectionné&nbsp;: <span className="text-paper/70">{fileName}</span> (
-                {fileData ? `${fileData.categories.length} catégorie(s), ${fileData.items.length} ressource(s)` : '—'}
+                Selected file: <span className="text-paper/70">{fileName}</span> (
+                {fileData ? `${fileData.categories.length} category/categories, ${fileData.items.length} resource(s)` : '—'}
                 )
               </p>
             ) : null}
           </div>
 
           <fieldset className="mt-4">
-            <legend className="field-label">Mode d’importation</legend>
+            <legend className="field-label">Import mode</legend>
             <label className="flex items-start gap-2.5 text-sm text-paper/75">
               <input
                 type="radio"
@@ -160,7 +160,7 @@ export function DataTools({ onImported, onNotice }: DataToolsProps) {
                 onChange={() => setMode('merge')}
               />
               <span>
-                Fusionner&nbsp;— ajoute les éléments du fichier, ignore ceux qui existent déjà.
+                Merge — adds the file’s items, skips those that already exist.
               </span>
             </label>
             <label className="mt-2.5 flex items-start gap-2.5 text-sm text-paper/75">
@@ -172,8 +172,7 @@ export function DataTools({ onImported, onNotice }: DataToolsProps) {
                 onChange={() => setMode('replace')}
               />
               <span>
-                Remplacer tout&nbsp;— <strong>efface</strong> les données actuelles puis importe le
-                fichier.
+                Replace all — <strong>erases</strong> the current data, then imports the file.
               </span>
             </label>
           </fieldset>
@@ -191,7 +190,7 @@ export function DataTools({ onImported, onNotice }: DataToolsProps) {
             disabled={!fileData || busy}
           >
             <Upload className="h-4 w-4" aria-hidden="true" />
-            {busy ? 'Importation…' : 'Importer'}
+            {busy ? 'Importing…' : 'Import'}
           </button>
         </div>
       </div>
@@ -200,17 +199,17 @@ export function DataTools({ onImported, onNotice }: DataToolsProps) {
         <ConfirmDialog
           busy={busy}
           options={{
-            title: 'Remplacer toutes les données ?',
-            confirmLabel: 'Tout remplacer',
+            title: 'Replace all data?',
+            confirmLabel: 'Replace everything',
             message: (
               <>
                 <p>
-                  Toutes les catégories et ressources actuelles seront <strong>définitivement
-                  supprimées</strong>, puis le fichier « {fileName} » sera importé.
+                  Every current category and resource will be <strong>permanently deleted</strong>,
+                  then the file “{fileName}” will be imported.
                 </p>
                 <p className="mt-2 text-paper/50">
-                  Cette action ne peut pas être annulée. Pensez à exporter vos données actuelles
-                  avant de continuer.
+                  This action cannot be undone. Remember to export your current data before
+                  continuing.
                 </p>
               </>
             ),

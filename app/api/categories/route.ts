@@ -14,7 +14,7 @@ export async function GET(): Promise<Response> {
     return jsonOk({ categories: listCategories(getDb()) });
   } catch (error) {
     logger.error('listing categories failed', { error: (error as Error).message });
-    return jsonError(500, 'server_error', 'Une erreur interne est survenue. Veuillez réessayer.');
+    return jsonError(500, 'server_error', 'An internal error occurred. Please try again.');
   }
 }
 
@@ -25,11 +25,11 @@ export async function POST(req: Request): Promise<Response> {
     if (denied) return denied;
 
     const body = await readJsonBody(req);
-    if (!body.ok) return jsonError(400, 'bad_request', 'Requête invalide : données illisibles.');
+    if (!body.ok) return jsonError(400, 'bad_request', 'Invalid request: unreadable data.');
 
     const parsed = categoryInputSchema.safeParse(body.data);
     if (!parsed.success) {
-      return jsonError(422, 'validation', 'Certains champs sont invalides.', {
+      return jsonError(422, 'validation', 'Some fields are invalid.', {
         issues: formatIssues(parsed.error),
       });
     }
@@ -39,6 +39,6 @@ export async function POST(req: Request): Promise<Response> {
     return jsonOk({ category }, { status: 201 });
   } catch (error) {
     logger.error('creating category failed', { error: (error as Error).message });
-    return jsonError(500, 'server_error', 'Une erreur interne est survenue. Veuillez réessayer.');
+    return jsonError(500, 'server_error', 'An internal error occurred. Please try again.');
   }
 }

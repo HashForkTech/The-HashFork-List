@@ -13,7 +13,7 @@ export const dynamic = 'force-dynamic';
 
 type RouteContext = { params: Promise<{ id: string }> };
 
-/** PATCH /api/items/[id] — partial update (sans authentification). */
+/** PATCH /api/items/[id] — partial update (no login required). */
 export async function PATCH(req: Request, context: RouteContext): Promise<Response> {
   try {
     const denied = rejectUntrustedMutation(req);
@@ -22,23 +22,23 @@ export async function PATCH(req: Request, context: RouteContext): Promise<Respon
     const { id } = await context.params;
     const db = getDb();
     if (!getItem(db, id)) {
-      return jsonError(404, 'not_found', 'Cette ressource n’existe pas (ou plus).');
+      return jsonError(404, 'not_found', 'This resource does not exist (or no longer exists).');
     }
 
     const body = await readJsonBody(req);
-    if (!body.ok) return jsonError(400, 'bad_request', 'Requête invalide : données illisibles.');
+    if (!body.ok) return jsonError(400, 'bad_request', 'Invalid request: unreadable data.');
 
     const parsed = itemInputSchema.safeParse(body.data);
     if (!parsed.success) {
-      return jsonError(422, 'validation', 'Certains champs sont invalides.', {
+      return jsonError(422, 'validation', 'Some fields are invalid.', {
         issues: formatIssues(parsed.error),
       });
     }
 
     const categoryId = parsed.data.categoryId ?? null;
     if (categoryId && !getCategory(db, categoryId)) {
-      return jsonError(422, 'validation', 'Catégorie inconnie.', {
-        issues: ['La catégorie sélectionnée n’existe pas (ou plus).'],
+      return jsonError(422, 'validation', 'Unknown category.', {
+        issues: ['The selected category does not exist (or no longer exists).'],
       });
     }
 
@@ -52,6 +52,9 @@ export async function PATCH(req: Request, context: RouteContext): Promise<Respon
       websiteUrl: parsed.data.websiteUrl,
       huggingFaceUrl: parsed.data.huggingFaceUrl,
       youtubeUrl: parsed.data.youtubeUrl,
+      tested: parsed.data.tested,
+      rating: parsed.data.rating,
+      comment: parsed.data.comment,
     });
 
     const item = updateItem(db, id, payload);
@@ -59,7 +62,7 @@ export async function PATCH(req: Request, context: RouteContext): Promise<Respon
     return jsonOk({ item });
   } catch (error) {
     logger.error('updating item failed', { error: (error as Error).message });
-    return jsonError(500, 'server_error', 'Une erreur interne est survenue. Veuillez réessayer.');
+    return jsonError(500, 'server_error', 'An internal error occurred. Please try again.');
   }
 }
 
@@ -72,12 +75,12 @@ export async function DELETE(req: Request, context: RouteContext): Promise<Respo
     const { id } = await context.params;
     const deleted = deleteItem(getDb(), id);
     if (!deleted) {
-      return jsonError(404, 'not_found', 'Cette ressource n’existe pas (ou plus).');
+      return jsonError(404, 'not_found', 'This resource does not exist (or no longer exists).');
     }
     logger.info('item deleted', { itemId: id });
     return jsonOk({ ok: true });
   } catch (error) {
     logger.error('deleting item failed', { error: (error as Error).message });
-    return jsonError(500, 'server_error', 'Une erreur interne est survenue. Veuillez réessayer.');
+    return jsonError(500, 'server_error', 'An internal error occurred. Please try again.');
   }
 }

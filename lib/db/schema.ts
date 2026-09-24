@@ -75,6 +75,16 @@ export const MIGRATIONS: Migration[] = [
       DROP TABLE IF EXISTS admin;
     `,
   },
+  {
+    // Per-resource review metadata: "Tested" flag, 0–5 star rating
+    // (0 = not rated) and an optional admin comment.
+    version: 3,
+    sql: `
+      ALTER TABLE items ADD COLUMN tested  INTEGER NOT NULL DEFAULT 0;
+      ALTER TABLE items ADD COLUMN rating  INTEGER NOT NULL DEFAULT 0;
+      ALTER TABLE items ADD COLUMN comment TEXT;
+    `,
+  },
 ];
 
 export function migrate(db: DB): void {

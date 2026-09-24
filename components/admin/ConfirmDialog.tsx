@@ -81,7 +81,7 @@ export function ConfirmDialog({ options, busy, onConfirm, onCancel }: ConfirmDia
         </div>
         <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <button ref={cancelRef} type="button" className="btn" onClick={onCancel} disabled={busy}>
-            {options.cancelLabel ?? 'Annuler'}
+            {options.cancelLabel ?? 'Cancel'}
           </button>
           <button
             type="button"
@@ -90,7 +90,7 @@ export function ConfirmDialog({ options, busy, onConfirm, onCancel }: ConfirmDia
             disabled={busy}
             aria-busy={busy ?? false}
           >
-            {busy ? 'Suppression…' : (options.confirmLabel ?? 'Supprimer')}
+            {busy ? 'Deleting…' : (options.confirmLabel ?? 'Delete')}
           </button>
         </div>
       </div>

@@ -84,13 +84,64 @@ describe('items', () => {
     expect(res.status).toBe(201);
   });
 
+  it('stores tested, rating and comment', async () => {
+    const res = await itemPost(
+      apiRequest('/api/items', {
+        method: 'POST',
+        body: { name: 'Reviewed', tested: true, rating: 4, comment: 'Works well.' },
+      }),
+    );
+    expect(res.status).toBe(201);
+    const { item } = (await readJson(res)) as {
+      item: { tested: boolean; rating: number; comment: string | null };
+    };
+    expect(item.tested).toBe(true);
+    expect(item.rating).toBe(4);
+    expect(item.comment).toBe('Works well.');
+  });
+
+  it('defaults tested to false and rating to 0', async () => {
+    const res = await itemPost(
+      apiRequest('/api/items', { method: 'POST', body: { name: 'Plain' } }),
+    );
+    expect(res.status).toBe(201);
+    const { item } = (await readJson(res)) as {
+      item: { tested: boolean; rating: number; comment: string | null };
+    };
+    expect(item.tested).toBe(false);
+    expect(item.rating).toBe(0);
+    expect(item.comment).toBeNull();
+  });
+
+  it('updates review fields partially', async () => {
+    const created = await itemPost(
+      apiRequest('/api/items', { method: 'POST', body: { name: 'Patch me' } }),
+    );
+    const { item } = (await readJson(created)) as { item: { id: string } };
+    const res = await itemPatch(
+      apiRequest(`/api/items/${item.id}`, {
+        method: 'PATCH',
+        body: { tested: true, rating: 5 },
+      }),
+      routeContext(item.id),
+    );
+    expect(res.status).toBe(200);
+    const { item: updated } = (await readJson(res)) as {
+      item: { name: string; tested: boolean; rating: number; comment: string | null };
+    };
+    expect(updated.name).toBe('Patch me'); // untouched
+    expect(updated.tested).toBe(true);
+    expect(updated.rating).toBe(5);
+    expect(updated.comment).toBeNull();
+  });
+
   it('rejects malformed URLs without a technical leak', async () => {
     const res = await itemPost(
       apiRequest('/api/items', { method: 'POST', body: { githubUrl: 'pas une url' } }),
     );
     expect(res.status).toBe(422);
     const text = JSON.stringify(await readJson(res));
-    expect(text).toContain('Lien GitHub');
+    expect(text).toContain('GitHub link');
     expect(text).not.toContain('stack');
   });
 

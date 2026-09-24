@@ -12,7 +12,7 @@ export type ApiErrorBody = {
 };
 
 /**
- * All API errors share this envelope. Messages are user-facing (French) and
+ * All API errors share this envelope. Messages are user-facing (English) and
  * never contain stack traces, SQL or secrets — details are logged server-side.
  */
 export function jsonError(

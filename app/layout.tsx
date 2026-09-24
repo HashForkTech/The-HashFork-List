@@ -2,9 +2,9 @@ import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import './globals.css';
 
-const SITE_NAME = 'The Hashfork List';
+const SITE_NAME = 'The HashFork List';
 const SITE_DESCRIPTION =
-  'Une liste sélectionnée d’applications GitHub, de LLM, de modèles et d’outils IA.';
+  'A curated list of GitHub applications, LLMs, models and AI tools.';
 
 const appUrl = process.env.APP_URL?.trim() || 'http://localhost:3000';
 
@@ -17,17 +17,17 @@ export const metadata: Metadata = {
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
   keywords: [
-    'intelligence artificielle',
+    'artificial intelligence',
     'LLM',
-    'modèles',
-    'outils IA',
+    'models',
+    'AI tools',
     'GitHub',
     'Hugging Face',
     'open source',
   ],
   openGraph: {
     type: 'website',
-    locale: 'fr_FR',
+    locale: 'en_US',
     siteName: SITE_NAME,
     title: SITE_NAME,
     description: SITE_DESCRIPTION,
@@ -53,7 +53,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="fr">
+    <html lang="en">
       <body className="min-h-screen bg-ink font-sans text-paper antialiased">{children}</body>
     </html>
   );

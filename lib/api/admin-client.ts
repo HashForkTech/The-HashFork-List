@@ -2,7 +2,7 @@ import type { Category, CategoryWithCount, ItemPayload, ListItem } from '@/lib/t
 
 /**
  * Thin client for the admin API. Always sends the custom mutation header
- * (cross-origin protection) and maps API errors to user-friendly French
+ * (cross-origin protection) and maps API errors to user-friendly English
  * messages. There is no login in this build.
  */
 
@@ -45,7 +45,7 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<Ap
       ok: false,
       status: 0,
       code: 'network',
-      message: 'Connexion impossible. Vérifiez votre connexion réseau.',
+      message: 'Unable to connect. Check your network connection.',
     };
   }
 
@@ -66,7 +66,7 @@ async function request<T>(url: string, options: RequestOptions = {}): Promise<Ap
       ok: false,
       status: res.status,
       code: error?.code ?? 'error',
-      message: error?.message ?? 'Une erreur est survenue. Veuillez réessayer.',
+      message: error?.message ?? 'An error occurred. Please try again.',
       issues: error?.details?.issues,
     };
   }

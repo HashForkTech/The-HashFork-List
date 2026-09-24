@@ -1,6 +1,6 @@
-# The Hashfork List
+# The HashFork List
 
-A minimalist, dark-themed directory of curated resources — GitHub applications, LLMs, models and AI tools — with a French-first public interface and a simple admin area.
+A minimalist, dark-themed directory of curated resources — GitHub applications, LLMs, models and AI tools — with an English public interface and a simple admin area.
 
 > **Stack** — Next.js (App Router) · TypeScript · React · Tailwind CSS · SQLite (local file)
 >
@@ -115,23 +115,23 @@ Because the data is local, back it up deliberately.
 
 ### Option A — Export / Import (built in, recommended)
 
-In **Admin → Données & sauvegarde**:
+In **Admin → Data & backup**:
 
-- **Exporter les données (JSON)** downloads `hashfork-list-backup-YYYY-MM-DD.json`:
+- **Export data (JSON)** downloads `hashfork-list-backup-YYYY-MM-DD.json`:
 
   ```json
   {
     "format": "the-hashfork-list/backup",
-    "version": 1,
+    "version": 2,
     "exportedAt": "…",
     "categories": [ … ],
     "items": [ … ]
   }
   ```
 
-- **Importer** restores such a file (validated entirely before writing, applied in one transaction):
-  - *Fusionner* — adds missing entries, never overwrites existing ones (duplicates are skipped).
-  - *Remplacer tout* — deletes current categories/items first and therefore **requires explicit confirmation** in a dialog *and* `confirm: true` in the request.
+- **Import** restores such a file (validated entirely before writing, applied in one transaction):
+  - *Merge* — adds missing entries, never overwrites existing ones (duplicates are skipped).
+  - *Replace all* — deletes current categories/items first and therefore **requires explicit confirmation** in a dialog *and* `confirm: true` in the request.
 
 ### Option B — Copy the database file
 
@@ -158,7 +158,7 @@ Adding a schema change = append a new `{ version: n, sql: … }` entry; existing
 - **Input validation** — Zod schemas server-side (`lib/validation/schemas.ts`) for every payload; URLs must be `http(s)` (`javascript:`, `data:` … rejected), are length-capped and normalized (missing scheme → `https://`).
 - **XSS** — item names/descriptions are rendered as plain text by React (auto-escaped); never as raw HTML.
 - **Security headers** (`middleware.ts`) — strict self-contained `Content-Security-Policy` (no third-party origins at all), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`, `Cross-Origin-Opener-Policy`, `Cross-Origin-Resource-Policy`, optional HSTS. `upgrade-insecure-requests` is deliberately **not** set so plain-HTTP deployments keep working.
-- **Error handling** — user-facing French messages, no stack traces/SQL leaked; details are logged server-side.
+- **Error handling** — user-facing English messages, no stack traces/SQL leaked; details are logged server-side.
 - **Rate limiting** — none is required (there is no login to brute-force). If you expose the write API publicly, do the rate limiting at the reverse proxy.
 
 ## Deployment
@@ -204,7 +204,7 @@ Do **not** assume a local SQLite file is persistent on an ephemeral file system.
 ```
 app/
   page.tsx                 # public homepage (server-rendered)
-  layout.tsx, globals.css  # French-first metadata, dark theme
+  layout.tsx, globals.css  # English metadata, dark theme
   admin/page.tsx           # administration dashboard (no login)
   admin/dashboard/page.tsx # redirect → /admin (kept for old links)
   api/…                    # REST API (categories, items, export, import)
@@ -226,7 +226,7 @@ data/                      # SQLite database (created at runtime, git-ignored)
 ## Testing
 
 ```bash
-npm test          # 56 tests across 5 files
+npm test          # 62 tests across 5 files
 ```
 
 Coverage includes: item CRUD with full/partial/empty payloads, URL validation & normalization, category CRUD, **category deletion keeping its items**, category filtering, cross-origin protection (missing header / cross-site origin / Sec-Fetch-Site / malformed Origin), "mutations need no credentials" and "auth endpoints + auth tables are gone", malformed & oversized input, and backup export/import (merge, replace-with-confirmation, malformed files).
@@ -234,11 +234,12 @@ Coverage includes: item CRUD with full/partial/empty payloads, URL validation & 
 ## Design & UX notes
 
 - Colors are limited to `#141414` (background) and `#dedede` (foreground); every other tone is an opacity variation of those two.
-- The interface is French-first (no translation widget in this build).
-- Public list is a compact vertical list (not card-heavy): **name + icons on line 1**, description on line 2. Icons (GitHub, Web, Hugging Face, YouTube) render **only** for provided URLs and open in a new tab with `rel="noopener noreferrer"`.
+- The interface is in English.
+- The page title **The HashFork List** is displayed centered in the header.
+- Public list is a compact vertical list (not card-heavy): **line 1** shows the resource name on the left followed by its link icons (Website, GitHub, YouTube, Hugging Face — in that order) and, on the right, the review metadata: *Tested* (when the checkbox is checked), the yellow star notation (only the rated 1–5 stars are shown — none when unrated), and a *Comment* link that pops the comment up on hover. **Line 2** is the description. Icons render **only** for provided URLs and open in a new tab with `rel="noopener noreferrer"`.
 - Categories are dynamic. The filter is a horizontally scrollable pill bar on mobile with a clear active state (also exposed via `aria-pressed`). Filtering toggles row visibility in the DOM — instant, zero re-rendering.
-- Empty states: *« Aucune ressource pour le moment. »*, *« Aucune ressource dans cette catégorie. »*, and a normal experience when no category exists at all.
-- Every field of an item is optional (even everything empty, with an explicit notice in the form); URLs are validated when provided.
+- Empty states: *“No resources yet.”*, *“No resources in this category.”*, and a normal experience when no category exists at all.
+- Every field of an item is optional (even everything empty, with an explicit notice in the form); URLs are validated when provided. Each resource also carries admin review metadata: a **Tested** checkbox, a **1–5 star** rating and a **comment** (shown as a hover popup on the public list).
 - Newest items first (`createdAt DESC`). No manual ordering field — intentionally kept simple.
 - Responsive from 320px to 1440px+: compact header, wrapped controls, 44px touch targets on mobile, no horizontal overflow.
 - Accessibility: semantic landmarks/headings, labeled controls, `aria-label` + tooltips on icon-only buttons, visible focus rings, `prefers-reduced-motion` respected, deletion always behind a confirmation dialog.

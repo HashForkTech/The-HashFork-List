@@ -19,11 +19,14 @@ type LinkDefinition = {
  */
 export function LinkIcons({ item }: { item: ListItem }) {
   const links: LinkDefinition[] = [];
+  if (item.websiteUrl) {
+    links.push({ key: 'website', href: item.websiteUrl, label: 'Website', kind: 'website' });
+  }
   if (item.githubUrl) {
     links.push({ key: 'github', href: item.githubUrl, label: 'GitHub', kind: 'github' });
   }
-  if (item.websiteUrl) {
-    links.push({ key: 'website', href: item.websiteUrl, label: 'Site web', kind: 'website' });
+  if (item.youtubeUrl) {
+    links.push({ key: 'youtube', href: item.youtubeUrl, label: 'YouTube', kind: 'youtube' });
   }
   if (item.huggingFaceUrl) {
     links.push({
@@ -33,13 +36,10 @@ export function LinkIcons({ item }: { item: ListItem }) {
       kind: 'huggingface',
     });
   }
-  if (item.youtubeUrl) {
-    links.push({ key: 'youtube', href: item.youtubeUrl, label: 'YouTube', kind: 'youtube' });
-  }
 
   if (links.length === 0) return null;
 
-  const itemName = item.name?.trim() || 'ressource sans nom';
+  const itemName = item.name?.trim() || 'unnamed resource';
 
   return (
     <div className="flex shrink-0 items-center">

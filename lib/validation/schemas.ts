@@ -12,20 +12,35 @@ const emptyToNull = (value: unknown): unknown =>
   typeof value === 'string' && value.trim() === '' ? null : value;
 
 const optionalText = (max: number) =>
-  z.preprocess(emptyToNull, z.string().trim().max(max, `${max} caractères maximum.`).nullish());
+  z.preprocess(emptyToNull, z.string().trim().max(max, `Maximum ${max} characters.`).nullish());
 
 const optionalUrlField = () =>
   z
-    .preprocess(emptyToNull, z.string().trim().max(LIMITS.url, 'URL trop longue.').nullish())
+    .preprocess(emptyToNull, z.string().trim().max(LIMITS.url, 'URL too long.').nullish())
     .superRefine((value, ctx) => {
       if (value == null) return;
       if (!normalizeUrl(value)) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
-          message: 'URL invalide (ex. https://exemple.com).',
+          message: 'Invalid URL (e.g. https://example.com).',
         });
       }
     });
+
+/** Star notation: an integer from 0 to 5 (0 = not rated). */
+const ratingField = () =>
+  z.preprocess(
+    emptyToNull,
+    z
+      .number()
+      .int('Rating must be a whole number of stars.')
+      .min(0, 'Rating must be between 0 and 5 stars.')
+      .max(5, 'Rating must be between 0 and 5 stars.')
+      .nullish(),
+  );
+
+/** "Tested" flag: a boolean (null = not provided = false). */
+const testedField = () => z.preprocess(emptyToNull, z.boolean().nullish());
 
 export const itemInputSchema = z.object({
   categoryId: z.preprocess(emptyToNull, z.string().trim().min(1).max(LIMITS.id).nullish()),
@@ -35,19 +50,22 @@ export const itemInputSchema = z.object({
   websiteUrl: optionalUrlField(),
   huggingFaceUrl: optionalUrlField(),
   youtubeUrl: optionalUrlField(),
+  tested: testedField(),
+  rating: ratingField(),
+  comment: optionalText(LIMITS.comment),
 });
 
 export type ItemInput = z.infer<typeof itemInputSchema>;
 
 export const categoryInputSchema = z.object({
   name: z
-    .string({ required_error: 'Champ obligatoire.' })
+    .string({ required_error: 'This field is required.' })
     .transform((value) => value.trim())
     .pipe(
       z
         .string()
-        .min(1, 'Champ obligatoire.')
-        .max(LIMITS.category, `${LIMITS.category} caractères maximum.`),
+        .min(1, 'This field is required.')
+        .max(LIMITS.category, `Maximum ${LIMITS.category} characters.`),
     ),
 });
 
@@ -62,7 +80,7 @@ const optionalTimestamp = z.preprocess(
     .trim()
     .max(40)
     .refine((value) => !Number.isNaN(Date.parse(value)), {
-      message: 'Date invalide (format ISO attendu).',
+      message: 'Invalid date (ISO format expected).',
     })
     .nullish(),
 );
@@ -70,9 +88,9 @@ const optionalTimestamp = z.preprocess(
 export const backupCategorySchema = z.object({
   id: z.string().trim().min(1).max(LIMITS.id).nullish(),
   name: z
-    .string({ required_error: 'Chaque catégorie doit porter un nom.' })
+    .string({ required_error: 'Every category must have a name.' })
     .transform((value) => value.trim())
-    .pipe(z.string().min(1, 'Chaque catégorie doit porter un nom.').max(LIMITS.category)),
+    .pipe(z.string().min(1, 'Every category must have a name.').max(LIMITS.category)),
   createdAt: optionalTimestamp,
 });
 
@@ -85,6 +103,9 @@ export const backupItemSchema = z.object({
   websiteUrl: optionalUrlField(),
   huggingFaceUrl: optionalUrlField(),
   youtubeUrl: optionalUrlField(),
+  tested: testedField(),
+  rating: ratingField(),
+  comment: optionalText(LIMITS.comment),
   createdAt: optionalTimestamp,
   updatedAt: optionalTimestamp,
 });
@@ -92,8 +113,8 @@ export const backupItemSchema = z.object({
 export const backupPayloadSchema = z.object({
   categories: z
     .array(backupCategorySchema)
-    .max(LIMITS.backupCategories, 'Trop de catégories dans le fichier.'),
-  items: z.array(backupItemSchema).max(LIMITS.backupItems, 'Trop de ressources dans le fichier.'),
+    .max(LIMITS.backupCategories, 'Too many categories in the file.'),
+  items: z.array(backupItemSchema).max(LIMITS.backupItems, 'Too many resources in the file.'),
 });
 
 export type BackupCategoryInput = z.infer<typeof backupCategorySchema>;
@@ -102,7 +123,7 @@ export type BackupPayloadInput = z.infer<typeof backupPayloadSchema>;
 
 export const importRequestSchema = z.object({
   mode: z.enum(['merge', 'replace'], {
-    errorMap: () => ({ message: 'Mode d’importation invalide (« merge » ou « replace »).' }),
+    errorMap: () => ({ message: 'Invalid import mode ("merge" or "replace").' }),
   }),
   confirm: z.boolean().nullish(),
   data: backupPayloadSchema,
@@ -113,23 +134,26 @@ export const importRequestSchema = z.object({
 /* -------------------------------------------------------------------------- */
 
 const FIELD_LABELS: Record<string, string> = {
-  name: 'Nom',
+  name: 'Name',
   description: 'Description',
-  categoryId: 'Catégorie',
-  githubUrl: 'Lien GitHub',
-  websiteUrl: 'Site web',
-  huggingFaceUrl: 'Lien Hugging Face',
-  youtubeUrl: 'Lien YouTube',
-  createdAt: 'Date de création',
-  updatedAt: 'Date de modification',
+  categoryId: 'Category',
+  githubUrl: 'GitHub link',
+  websiteUrl: 'Website',
+  huggingFaceUrl: 'Hugging Face link',
+  youtubeUrl: 'YouTube link',
+  tested: 'Tested',
+  rating: 'Rating',
+  comment: 'Comment',
+  createdAt: 'Created at',
+  updatedAt: 'Updated at',
 };
 
-/** Turns a ZodError into a flat list of user-facing French messages. */
+/** Turns a ZodError into a flat list of user-facing English messages. */
 export function formatIssues(error: z.ZodError): string[] {
   return error.issues.map((issue) => {
     const segments = issue.path.map(String);
     const leaf = segments[segments.length - 1] ?? '';
     const label = FIELD_LABELS[leaf] ?? (/^\d*$/.test(leaf) ? '' : leaf);
-    return label ? `${label} : ${issue.message}` : issue.message;
+    return label ? `${label}: ${issue.message}` : issue.message;
   });
 }
