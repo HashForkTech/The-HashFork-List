@@ -53,8 +53,16 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
-      <body className="min-h-screen bg-ink font-sans text-paper antialiased">{children}</body>
+    // suppressHydrationWarning: browser extensions (e.g. Grammarly) inject
+    // attributes into <html>/<body> before React hydrates. This silences the
+    // resulting attribute-only mismatch; it does NOT affect the subtree.
+    <html lang="en" suppressHydrationWarning>
+      <body
+        className="min-h-screen bg-ink font-sans text-paper antialiased"
+        suppressHydrationWarning
+      >
+        {children}
+      </body>
     </html>
   );
 }
