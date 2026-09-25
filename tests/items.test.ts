@@ -93,11 +93,12 @@ describe('items', () => {
     );
     expect(res.status).toBe(201);
     const { item } = (await readJson(res)) as {
-      item: { tested: boolean; rating: number; comment: string | null };
+      item: { tested: boolean; rating: number; comment: string | null; testedAt: string | null };
     };
     expect(item.tested).toBe(true);
     expect(item.rating).toBe(4);
     expect(item.comment).toBe('Works well.');
+    expect(item.testedAt).toBeTruthy(); // check date stamped automatically
   });
 
   it('defaults tested to false and rating to 0', async () => {
@@ -106,11 +107,65 @@ describe('items', () => {
     );
     expect(res.status).toBe(201);
     const { item } = (await readJson(res)) as {
-      item: { tested: boolean; rating: number; comment: string | null };
+      item: { tested: boolean; rating: number; comment: string | null; testedAt: string | null };
     };
     expect(item.tested).toBe(false);
     expect(item.rating).toBe(0);
     expect(item.comment).toBeNull();
+    expect(item.testedAt).toBeNull();
+  });
+
+  it('stamps the check date when tested is checked and clears it when unchecked', async () => {
+    const created = await itemPost(
+      apiRequest('/api/items', { method: 'POST', body: { name: 'À tester' } }),
+    );
+    const { item } = (await readJson(created)) as {
+      item: { id: string; tested: boolean; testedAt: string | null };
+    };
+    expect(item.testedAt).toBeNull();
+
+    // checking the box saves the date of the check
+    const checked = await itemPatch(
+      apiRequest(`/api/items/${item.id}`, { method: 'PATCH', body: { tested: true } }),
+      routeContext(item.id),
+    );
+    expect(checked.status).toBe(200);
+    const { item: testedItem } = (await readJson(checked)) as {
+      item: { tested: boolean; testedAt: string | null };
+    };
+    expect(testedItem.tested).toBe(true);
+    expect(testedItem.testedAt).toBeTruthy();
+
+    // an unrelated edit keeps the original check date
+    const touched = await itemPatch(
+      apiRequest(`/api/items/${item.id}`, { method: 'PATCH', body: { description: 'Modifié' } }),
+      routeContext(item.id),
+    );
+    const { item: touchedItem } = (await readJson(touched)) as {
+      item: { testedAt: string | null };
+    };
+    expect(touchedItem.testedAt).toBe(testedItem.testedAt);
+
+    // unchecking clears the check date
+    const unchecked = await itemPatch(
+      apiRequest(`/api/items/${item.id}`, { method: 'PATCH', body: { tested: false } }),
+      routeContext(item.id),
+    );
+    const { item: uncheckedItem } = (await readJson(unchecked)) as {
+      item: { tested: boolean; testedAt: string | null };
+    };
+    expect(uncheckedItem.tested).toBe(false);
+    expect(uncheckedItem.testedAt).toBeNull();
+  });
+
+  it('rejects a malformed check date', async () => {
+    const res = await itemPost(
+      apiRequest('/api/items', {
+        method: 'POST',
+        body: { name: 'Date', tested: true, testedAt: 'pas une date' },
+      }),
+    );
+    expect(res.status).toBe(422);
   });
 
   it('updates review fields partially', async () => {

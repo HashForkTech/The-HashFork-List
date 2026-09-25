@@ -16,6 +16,7 @@ type PendingConfirm = ConfirmOptions & { onConfirm: () => void | Promise<void> }
 type AdminDashboardProps = {
   initialCategories: CategoryWithCount[];
   initialItems: ListItem[];
+  initialSiteTitle: string;
 };
 
 function StarRow({ rating }: { rating: number }) {
@@ -38,16 +39,25 @@ function StarRow({ rating }: { rating: number }) {
 
 /**
  * Lightweight content management screen:
+ *   Main page  → title of the public page
  *   Categories → create / rename / delete (items are kept on delete)
  *   Items      → create / edit / delete
  *   Data       → export / import backups
  */
-export function AdminDashboard({ initialCategories, initialItems }: AdminDashboardProps) {
+export function AdminDashboard({
+  initialCategories,
+  initialItems,
+  initialSiteTitle,
+}: AdminDashboardProps) {
   const [categories, setCategories] = useState<CategoryWithCount[]>(initialCategories);
   const [items, setItems] = useState<ListItem[]>(initialItems);
   const [notice, setNotice] = useState<Notice | null>(null);
   const [confirm, setConfirm] = useState<PendingConfirm | null>(null);
   const [confirmBusy, setConfirmBusy] = useState(false);
+
+  const [siteTitle, setSiteTitle] = useState(initialSiteTitle);
+  const [titleIssues, setTitleIssues] = useState<string[]>([]);
+  const [titleBusy, setTitleBusy] = useState(false);
 
   const [showCategoryForm, setShowCategoryForm] = useState(false);
   const [categoryName, setCategoryName] = useState('');
@@ -70,6 +80,28 @@ export function AdminDashboard({ initialCategories, initialItems }: AdminDashboa
     if (categoryResult.ok) setCategories(categoryResult.data.categories);
     if (itemResult.ok) setItems(itemResult.data.items);
   }, []);
+
+  /* ------------------------------- main page ------------------------------ */
+
+  async function handleSaveTitle(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const title = siteTitle.trim();
+    if (!title) {
+      setTitleIssues(['The page title is required.']);
+      return;
+    }
+    setTitleBusy(true);
+    setTitleIssues([]);
+    const result = await adminApi.updateSettings(title);
+    setTitleBusy(false);
+    if (!result.ok) {
+      setTitleIssues(result.issues?.length ? result.issues : [result.message]);
+      setNotice({ kind: 'error', text: result.message });
+      return;
+    }
+    setSiteTitle(result.data.settings.siteTitle);
+    setNotice({ kind: 'info', text: 'Page title updated.' });
+  }
 
   /* ------------------------------- categories ------------------------------ */
 
@@ -239,6 +271,45 @@ export function AdminDashboard({ initialCategories, initialItems }: AdminDashboa
             {notice.text}
           </p>
         ) : null}
+
+        {/* ------------------------------ main page ---------------------------- */}
+        <section aria-labelledby="main-page-title" className="mt-10">
+          <h2 id="main-page-title" className="section-title">
+            Main page
+          </h2>
+          <form onSubmit={(event) => void handleSaveTitle(event)} className="panel mt-4 p-4">
+            <label className="field-label" htmlFor="site-title">
+              Page title
+            </label>
+            <div className="flex flex-wrap gap-2">
+              <input
+                id="site-title"
+                className="field-input min-w-0 flex-1"
+                maxLength={100}
+                placeholder="The HashFork List"
+                value={siteTitle}
+                onChange={(event) => {
+                  setSiteTitle(event.target.value);
+                  setTitleIssues([]);
+                }}
+              />
+              <button type="submit" className="btn btn-primary" disabled={titleBusy}>
+                {titleBusy ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+            <p className="field-hint">
+              Title of the main page: displayed centered in its header and used as the browser
+              tab title. Default: “The HashFork List”.
+            </p>
+            {titleIssues.length > 0 ? (
+              <ul role="alert" className="field-error mt-2 space-y-1">
+                {titleIssues.map((issue) => (
+                  <li key={issue}>⚠ {issue}</li>
+                ))}
+              </ul>
+            ) : null}
+          </form>
+        </section>
 
         {/* ------------------------------ categories ---------------------------- */}
         <section aria-labelledby="categories-title" className="mt-10">

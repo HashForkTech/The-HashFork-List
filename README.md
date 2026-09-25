@@ -79,7 +79,7 @@ data/                       ← DATA_DIR (back this up)
   hashfork.sqlite-shm       ← shared-memory index (transient)
 ```
 
-Tables: `categories`, `items`. (Migration v2 also drops the auth tables of earlier builds.)
+Tables: `categories`, `items`, `settings` (key/value, e.g. the main page title). (Migration v2 also drops the auth tables of earlier builds.)
 
 All reads/writes go through a repository layer (`lib/db/repositories/*`). React components and route handlers never touch SQLite directly, so migrating later to PostgreSQL or another database means re-implementing those repositories only.
 
@@ -87,7 +87,7 @@ All reads/writes go through a repository layer (`lib/db/repositories/*`). React 
 
 ## Admin area (no password)
 
-`/admin` is the full content-management screen (categories, resources, backup tools). It opens **without any login** — there is no password, no account and no session cookie. That is exactly why **no SSL certificate is required**: the app never stores or transmits credentials.
+`/admin` is the full content-management screen (main page title, categories, resources, backup tools). It opens **without any login** — there is no password, no account and no session cookie. That is exactly why **no SSL certificate is required**: the app never stores or transmits credentials.
 
 > ⚠️ **Know what this means.** Anyone who can reach `/admin` (and the `/api/*` write endpoints) can change your content. That is fine on a private machine, a LAN tool or behind a protective reverse proxy — it is **not** fine on an unauthenticated public URL. If the instance is exposed to people you don't trust, gate it at the server layer before it reaches Node:
 >
@@ -122,7 +122,7 @@ In **Admin → Data & backup**:
   ```json
   {
     "format": "the-hashfork-list/backup",
-    "version": 2,
+    "version": 3,
     "exportedAt": "…",
     "categories": [ … ],
     "items": [ … ]
@@ -187,6 +187,8 @@ docker compose up --build -d     # data lives in the named volume "hashfork-data
 
 See `Dockerfile` and `docker-compose.yml`. The volume is what makes the database durable — without it the data disappears with the container.
 
+The runtime image runs Next.js' **standalone server** (`node server.js` on `.next/standalone`, produced by `output: 'standalone'` in `next.config.mjs`) and copies `.next/static` + `public` into it, since the standalone bundle ships without assets. Do **not** change the container command to `npm run start`: `next start` does not work with a standalone build and will crash-loop the container.
+
 ### Platform warnings (read this)
 
 | Platform | Persistent local disk? | What to do |
@@ -226,20 +228,20 @@ data/                      # SQLite database (created at runtime, git-ignored)
 ## Testing
 
 ```bash
-npm test          # 62 tests across 5 files
+npm test          # 69 tests across 6 files
 ```
 
-Coverage includes: item CRUD with full/partial/empty payloads, URL validation & normalization, category CRUD, **category deletion keeping its items**, category filtering, cross-origin protection (missing header / cross-site origin / Sec-Fetch-Site / malformed Origin), "mutations need no credentials" and "auth endpoints + auth tables are gone", malformed & oversized input, and backup export/import (merge, replace-with-confirmation, malformed files).
+Coverage includes: item CRUD with full/partial/empty payloads, URL validation & normalization, the “Tested” check date (stamped when the checkbox is checked, kept across edits, cleared when unchecked), category CRUD, **category deletion keeping its items**, category filtering, site settings (default + customized main page title, validation), cross-origin protection (missing header / cross-site origin / Sec-Fetch-Site / malformed Origin), "mutations need no credentials" and "auth endpoints + auth tables are gone", malformed & oversized input, and backup export/import (merge, replace-with-confirmation, malformed files).
 
 ## Design & UX notes
 
 - Colors are limited to `#141414` (background) and `#dedede` (foreground); every other tone is an opacity variation of those two.
 - The interface is in English.
-- The page title **The HashFork List** is displayed centered in the header.
-- Public list is a compact vertical list (not card-heavy): **line 1** shows the resource name on the left followed by its link icons (Website, GitHub, YouTube, Hugging Face — in that order) and, on the right, the review metadata: *Tested* (when the checkbox is checked), the yellow star notation (only the rated 1–5 stars are shown — none when unrated), and a *Comment* link that pops the comment up on hover. **Line 2** is the description. Icons render **only** for provided URLs and open in a new tab with `rel="noopener noreferrer"`.
-- Categories are dynamic. The filter is a horizontally scrollable pill bar on mobile with a clear active state (also exposed via `aria-pressed`). Filtering toggles row visibility in the DOM — instant, zero re-rendering.
-- Empty states: *“No resources yet.”*, *“No resources in this category.”*, and a normal experience when no category exists at all.
-- Every field of an item is optional (even everything empty, with an explicit notice in the form); URLs are validated when provided. Each resource also carries admin review metadata: a **Tested** checkbox, a **1–5 star** rating and a **comment** (shown as a hover popup on the public list).
+- The page title (default **The HashFork List**) is displayed centered in the header and used as the browser tab title. The admin can change it in **Admin → Main page** (stored in the `settings` table).
+- Public list is a compact vertical list (not card-heavy): **line 1** shows the resource name on the left, immediately to its right *Added on &lt;date&gt;* (the creation date, stamped automatically from the OS date when the resource is created), then its link icons (Website, GitHub, YouTube, Hugging Face — in that order) and, on the right, the review metadata: *Tested on &lt;date&gt;* (when the checkbox is checked — the date is when the admin checked it), the yellow star notation (only the rated 1–5 stars are shown — none when unrated), and a *Comment* link that pops the comment up on hover. **Line 2** is the description. Icons render **only** for provided URLs and open in a new tab with `rel="noopener noreferrer"`.
+- Categories are dynamic. The category filter is a drop-down menu (**“All”** is selected by default); to its right, two checkboxes — **Tested** and **Non-tested** — narrow the list down to tested and/or non-tested resources (both checked by default = show everything). Filtering toggles row visibility in the DOM — instant, zero re-rendering.
+- Empty states: *“No resources yet.”*, *“No resources in this category.”*, *“No resources match the selected filters.”*, and a normal experience when no category exists at all.
+- Every field of an item is optional (even everything empty, with an explicit notice in the form); URLs are validated when provided. Each resource also carries admin review metadata: a **Tested** checkbox (the date of the check is saved automatically and displayed as *Tested on …*), a **1–5 star** rating and a **comment** (shown as a hover popup on the public list).
 - Newest items first (`createdAt DESC`). No manual ordering field — intentionally kept simple.
 - Responsive from 320px to 1440px+: compact header, wrapped controls, 44px touch targets on mobile, no horizontal overflow.
 - Accessibility: semantic landmarks/headings, labeled controls, `aria-label` + tooltips on icon-only buttons, visible focus rings, `prefers-reduced-motion` respected, deletion always behind a confirmation dialog.
