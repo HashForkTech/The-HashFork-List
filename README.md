@@ -4,7 +4,7 @@ A minimalist, dark-themed directory of curated resources. GitHub applications, L
 
 > **Stack** Next.js (App Router) · TypeScript · React · Tailwind CSS · SQLite (local file)
 >
-> **This build has NO admin password and NO translation widget** by request. No accounts, no passwords, no cookies; therefore **no SSL/TLS certificate is required** to run it.
+> **This build has NO admin password**. No accounts, no passwords, no cookies; therefore **no SSL/TLS certificate is required** to run it.
 
 <img width="1447" height="670" alt="image" src="https://github.com/user-attachments/assets/7334edcb-0484-4b32-9e72-352e9a49beee" />
 
