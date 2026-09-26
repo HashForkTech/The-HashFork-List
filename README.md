@@ -2,6 +2,13 @@
 
 A minimalist, dark-themed directory of curated resources. GitHub applications, LLMs, models and AI tools with an English public interface and a simple admin area.
 
+<img width="1447" height="670" alt="image" src="https://github.com/user-attachments/assets/7334edcb-0484-4b32-9e72-352e9a49beee" />
+
+
+<img width="1455" height="1192" alt="image" src="https://github.com/user-attachments/assets/b132e60c-8238-4e0e-8a09-bf34f9f37ff3" />
+
+
+
 > **Stack** Next.js (App Router) · TypeScript · React · Tailwind CSS · SQLite (local file)
 >
 > **This build has NO admin password and NO translation widget** by request. No accounts, no passwords, no cookies; therefore **no SSL/TLS certificate is required** to run it.
