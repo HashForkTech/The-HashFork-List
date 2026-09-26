@@ -85,6 +85,27 @@ export const MIGRATIONS: Migration[] = [
       ALTER TABLE items ADD COLUMN comment TEXT;
     `,
   },
+  {
+    // Date of the "Tested" check: stamped automatically when the admin checks
+    // the "Tested" checkbox (cleared again when it is unchecked). Rows that
+    // were already marked tested have no recorded check date — backfill with
+    // their last update date so "Tested on …" is never empty for them.
+    version: 4,
+    sql: `
+      ALTER TABLE items ADD COLUMN tested_at TEXT;
+      UPDATE items SET tested_at = updated_at WHERE tested = 1;
+    `,
+  },
+  {
+    // Site settings as key/value pairs (e.g. the customizable main page title).
+    version: 5,
+    sql: `
+      CREATE TABLE IF NOT EXISTS settings (
+        key   TEXT PRIMARY KEY,
+        value TEXT NOT NULL
+      );
+    `,
+  },
 ];
 
 export function migrate(db: DB): void {

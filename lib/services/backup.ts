@@ -93,6 +93,9 @@ export function toParsedBackup(input: BackupPayloadInput): ParsedBackup {
       description: item.description ?? null,
       ...urls,
       tested: item.tested ?? false,
+      // Older backups carry no check date: fall back to the update date so
+      // "Tested on …" is never empty for an already-tested resource.
+      testedAt: item.testedAt ?? (item.tested ? validIsoOrNow(item.updatedAt) : null),
       rating: item.rating ?? 0,
       comment: item.comment ?? null,
       createdAt: validIsoOrNow(item.createdAt),

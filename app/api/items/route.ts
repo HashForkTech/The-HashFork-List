@@ -77,6 +77,7 @@ export async function POST(req: Request): Promise<Response> {
       huggingFaceUrl: parsed.data.huggingFaceUrl,
       youtubeUrl: parsed.data.youtubeUrl,
       tested: parsed.data.tested,
+      testedAt: parsed.data.testedAt,
       rating: parsed.data.rating,
       comment: parsed.data.comment,
     });

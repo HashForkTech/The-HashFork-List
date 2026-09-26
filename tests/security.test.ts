@@ -6,6 +6,7 @@ import { GET as exportGet } from '@/app/api/export/route';
 import { DELETE as itemDelete, PATCH as itemPatch } from '@/app/api/items/[id]/route';
 import { GET as itemsGet, POST as itemPost } from '@/app/api/items/route';
 import { POST as importPost } from '@/app/api/import/route';
+import { PATCH as settingsPatch } from '@/app/api/settings/route';
 import {
   apiRequest,
   readJson,
@@ -112,6 +113,13 @@ describe('cross-origin protections (data safety without credentials)', () => {
           method: 'POST',
           omitMutationHeader: true,
           body: { mode: 'merge', data: { categories: [], items: [] } },
+        }),
+      ),
+      settingsPatch(
+        apiRequest('/api/settings', {
+          method: 'PATCH',
+          omitMutationHeader: true,
+          body: { siteTitle: 'x' },
         }),
       ),
     ]);

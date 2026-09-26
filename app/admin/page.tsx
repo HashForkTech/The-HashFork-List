@@ -2,6 +2,7 @@ import { AdminDashboard } from '@/components/admin/AdminDashboard';
 import { getDb } from '@/lib/db/client';
 import { listCategories } from '@/lib/db/repositories/categories';
 import { listItems } from '@/lib/db/repositories/items';
+import { getSiteTitle } from '@/lib/db/repositories/settings';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,5 +21,11 @@ export const metadata = {
  */
 export default function AdminPage() {
   const db = getDb();
-  return <AdminDashboard initialCategories={listCategories(db)} initialItems={listItems(db)} />;
+  return (
+    <AdminDashboard
+      initialCategories={listCategories(db)}
+      initialItems={listItems(db)}
+      initialSiteTitle={getSiteTitle(db)}
+    />
+  );
 }

@@ -1,4 +1,10 @@
-import type { Category, CategoryWithCount, ItemPayload, ListItem } from '@/lib/types';
+import type {
+  Category,
+  CategoryWithCount,
+  ItemPayload,
+  ListItem,
+  SiteSettings,
+} from '@/lib/types';
 
 /**
  * Thin client for the admin API. Always sends the custom mutation header
@@ -79,6 +85,14 @@ export const adminApi = {
     request<{ categories: CategoryWithCount[] }>('/api/categories', { method: 'GET' }),
 
   listItems: () => request<{ items: ListItem[] }>('/api/items', { method: 'GET' }),
+
+  getSettings: () => request<{ settings: SiteSettings }>('/api/settings', { method: 'GET' }),
+
+  updateSettings: (siteTitle: string) =>
+    request<{ settings: SiteSettings }>('/api/settings', {
+      method: 'PATCH',
+      body: { siteTitle },
+    }),
 
   createCategory: (name: string) =>
     request<{ category: Category }>('/api/categories', { method: 'POST', body: { name } }),

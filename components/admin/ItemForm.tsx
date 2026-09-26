@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from 'react';
 import { Star } from 'lucide-react';
 import type { Category, CategoryWithCount, ItemPayload, ListItem } from '@/lib/types';
+import { formatOsDate } from '@/lib/format';
 import { normalizeUrl } from '@/lib/validation/url';
 
 const URL_FIELDS = [
@@ -50,7 +51,8 @@ function initialFields(initial?: ListItem | null): Fields {
  * saved with a single field, or even completely empty (with a clear notice).
  * URLs are validated and normalized before submission.
  *
- * Review metadata: a "Tested" checkbox, a 1–5 star rating and a comment
+ * Review metadata: a "Tested" checkbox (the date of the check is stamped and
+ * shown as "Tested on …" on the public list), a 1–5 star rating and a comment
  * (shown as a hover popup next to "Comment" on the public list).
  */
 export function ItemForm({
@@ -64,6 +66,10 @@ export function ItemForm({
 }: ItemFormProps) {
   const [fields, setFields] = useState<Fields>(() => initialFields(initial));
   const [tested, setTested] = useState<boolean>(() => Boolean(initial?.tested));
+  // Date of the "Tested" check in this form session: `undefined` = the checkbox
+  // was not touched (keep the saved check date), otherwise the moment the admin
+  // checked it (`null` when it was unchecked again).
+  const [testedCheckedAt, setTestedCheckedAt] = useState<string | null | undefined>(undefined);
   const [rating, setRating] = useState<number>(() =>
     Math.min(5, Math.max(0, Math.round(initial?.rating ?? 0))),
   );
@@ -150,6 +156,7 @@ export function ItemForm({
       huggingFaceUrl: fields.huggingFaceUrl.trim() ? normalizeUrl(fields.huggingFaceUrl) : null,
       youtubeUrl: fields.youtubeUrl.trim() ? normalizeUrl(fields.youtubeUrl) : null,
       tested,
+      testedAt: testedCheckedAt,
       rating: rating > 0 ? rating : null,
     };
 
@@ -321,11 +328,20 @@ export function ItemForm({
               type="checkbox"
               className="h-4 w-4 accent-paper/70"
               checked={tested}
-              onChange={(event) => setTested(event.target.checked)}
+              onChange={(event) => {
+                const checked = event.target.checked;
+                setTested(checked);
+                // Stamp the date of the check (cleared again when unchecked).
+                setTestedCheckedAt(checked ? new Date().toISOString() : null);
+              }}
             />
             Tested
           </label>
-          <p className="field-hint">Check this box when the resource has been tested.</p>
+          <p className="field-hint">
+            Check this box when the resource has been tested. The date of the check is saved and
+            shown on the public list as “Tested on …”.
+            {initial?.testedAt ? ` Last checked on ${formatOsDate(initial.testedAt)}.` : ''}
+          </p>
         </div>
 
         <div className="sm:col-span-2">

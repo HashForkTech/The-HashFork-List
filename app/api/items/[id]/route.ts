@@ -53,6 +53,7 @@ export async function PATCH(req: Request, context: RouteContext): Promise<Respon
       huggingFaceUrl: parsed.data.huggingFaceUrl,
       youtubeUrl: parsed.data.youtubeUrl,
       tested: parsed.data.tested,
+      testedAt: parsed.data.testedAt,
       rating: parsed.data.rating,
       comment: parsed.data.comment,
     });

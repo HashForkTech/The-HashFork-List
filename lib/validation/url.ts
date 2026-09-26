@@ -9,6 +9,7 @@ export const LIMITS = {
   comment: 2000,
   url: 2048,
   category: 60,
+  siteTitle: 100,
   backupCategories: 5000,
   backupItems: 20000,
 } as const;

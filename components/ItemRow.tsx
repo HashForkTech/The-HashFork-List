@@ -1,17 +1,22 @@
 import { Star } from 'lucide-react';
 import { LinkIcons } from '@/components/LinkIcons';
+import { formatOsDate } from '@/lib/format';
 import type { ListItem } from '@/lib/types';
 
 /**
  * One row of the public list:
- *   line 1 → left:  name + (icon links when the matching URLs exist)
- *            right: "Tested" (when checked), yellow stars (only the rated
- *                   ones — none when unrated), "Comment" link (when a comment
- *                   exists; hovering it pops the comment up)
+ *   line 1 → left:  name, "Added on <date>" (to the right of the name; the
+ *            creation date, stamped automatically from the OS date when the
+ *            resource is created), then the icon links when the matching URLs
+ *            exist
+ *            right: "Tested on <date>" (when checked — the date is when the
+ *                   admin checked the "Tested" checkbox), yellow stars (only
+ *                   the rated ones — none when unrated), "Comment" link (when
+ *                   a comment exists; hovering it pops the comment up)
  *   line 2 → description (muted, wraps naturally on small screens)
  *
- * Rendered on the server and kept as a static DOM subtree: the category
- * filter only toggles visibility, so the row DOM survives filtering.
+ * Rendered on the server and kept as a static DOM subtree: the category and
+ * "Tested" filters only toggle visibility, so the row DOM survives filtering.
  */
 
 function Stars({ rating }: { rating: number }) {
@@ -55,12 +60,15 @@ export function ItemRow({ item }: { item: ListItem }) {
   const name = item.name?.trim();
   const rating = Math.min(5, Math.max(0, Math.round(item.rating ?? 0)));
   const comment = item.comment?.trim();
+  const addedAt = formatOsDate(item.createdAt);
+  const testedAt = item.testedAt ? formatOsDate(item.testedAt) : '';
 
   return (
     <article
       id={`item-${item.id}`}
       data-item-row="true"
       data-item-category={item.categoryId ?? ''}
+      data-item-tested={item.tested ? 'true' : 'false'}
       className="border-b border-paper/10 transition-colors duration-150 hover:bg-paper/[0.03]"
     >
       <div className="px-1 py-5 sm:px-3">
@@ -73,11 +81,18 @@ export function ItemRow({ item }: { item: ListItem }) {
                 <span className="font-normal italic text-paper/40">Unnamed resource</span>
               )}
             </h2>
+            {addedAt ? (
+              <span className="whitespace-nowrap text-xs tracking-wide text-paper/45">
+                {`Added on ${addedAt}`}
+              </span>
+            ) : null}
             <LinkIcons item={item} />
           </div>
           <div className="flex shrink-0 flex-wrap items-center gap-x-2.5 gap-y-1">
             {item.tested ? (
-              <span className="text-xs font-semibold tracking-wide text-paper/75">Tested</span>
+              <span className="text-xs font-semibold tracking-wide text-paper/75">
+                {testedAt ? `Tested on ${testedAt}` : 'Tested'}
+              </span>
             ) : null}
             {rating > 0 ? <Stars rating={rating} /> : null}
             {comment ? <CommentLink id={item.id} comment={comment} /> : null}

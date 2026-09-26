@@ -42,6 +42,19 @@ const ratingField = () =>
 /** "Tested" flag: a boolean (null = not provided = false). */
 const testedField = () => z.preprocess(emptyToNull, z.boolean().nullish());
 
+/** ISO timestamp fields (e.g. the date of a "Tested" check in backups). */
+const optionalTimestamp = z.preprocess(
+  emptyToNull,
+  z
+    .string()
+    .trim()
+    .max(40)
+    .refine((value) => !Number.isNaN(Date.parse(value)), {
+      message: 'Invalid date (ISO format expected).',
+    })
+    .nullish(),
+);
+
 export const itemInputSchema = z.object({
   categoryId: z.preprocess(emptyToNull, z.string().trim().min(1).max(LIMITS.id).nullish()),
   name: optionalText(LIMITS.name),
@@ -51,6 +64,7 @@ export const itemInputSchema = z.object({
   huggingFaceUrl: optionalUrlField(),
   youtubeUrl: optionalUrlField(),
   tested: testedField(),
+  testedAt: optionalTimestamp,
   rating: ratingField(),
   comment: optionalText(LIMITS.comment),
 });
@@ -70,20 +84,27 @@ export const categoryInputSchema = z.object({
 });
 
 /* -------------------------------------------------------------------------- */
-/*                                 Backups                                    */
+/*                                  Settings                                  */
 /* -------------------------------------------------------------------------- */
 
-const optionalTimestamp = z.preprocess(
-  emptyToNull,
-  z
-    .string()
-    .trim()
-    .max(40)
-    .refine((value) => !Number.isNaN(Date.parse(value)), {
-      message: 'Invalid date (ISO format expected).',
-    })
-    .nullish(),
-);
+/** Site settings (main page title, …). Every value is trimmed. */
+export const settingsInputSchema = z.object({
+  siteTitle: z
+    .string({ required_error: 'This field is required.' })
+    .transform((value) => value.trim())
+    .pipe(
+      z
+        .string()
+        .min(1, 'This field is required.')
+        .max(LIMITS.siteTitle, `Maximum ${LIMITS.siteTitle} characters.`),
+    ),
+});
+
+export type SettingsInput = z.infer<typeof settingsInputSchema>;
+
+/* -------------------------------------------------------------------------- */
+/*                                 Backups                                    */
+/* -------------------------------------------------------------------------- */
 
 export const backupCategorySchema = z.object({
   id: z.string().trim().min(1).max(LIMITS.id).nullish(),
@@ -104,6 +125,7 @@ export const backupItemSchema = z.object({
   huggingFaceUrl: optionalUrlField(),
   youtubeUrl: optionalUrlField(),
   tested: testedField(),
+  testedAt: optionalTimestamp,
   rating: ratingField(),
   comment: optionalText(LIMITS.comment),
   createdAt: optionalTimestamp,
@@ -142,8 +164,10 @@ const FIELD_LABELS: Record<string, string> = {
   huggingFaceUrl: 'Hugging Face link',
   youtubeUrl: 'YouTube link',
   tested: 'Tested',
+  testedAt: 'Tested at',
   rating: 'Rating',
   comment: 'Comment',
+  siteTitle: 'Page title',
   createdAt: 'Created at',
   updatedAt: 'Updated at',
 };
