@@ -10,6 +10,7 @@ A minimalist, dark-themed directory of curated resources. GitHub applications, L
 
 
 
+
 <img width="1455" height="1192" alt="image" src="https://github.com/user-attachments/assets/b132e60c-8238-4e0e-8a09-bf34f9f37ff3" />
 ---
 
