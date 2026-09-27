@@ -1,6 +1,6 @@
 # The HashFork List
 
-A minimalist, dark-themed directory of curated resources. GitHub applications, LLM models and AI tools with an English public interface and a simple admin area.
+A minimalist, dark-themed directory of curated resources. GitHub applications, LLMs, models and AI tools with an English public interface and a simple admin area.
 
 > **Stack** Next.js (App Router) · TypeScript · React · Tailwind CSS · SQLite (local file)
 >
