@@ -1,10 +1,10 @@
 # The HashFork List
 
-A minimalist, dark-themed directory of curated resources — GitHub applications, LLMs, models and AI tools — with an English public interface and a simple admin area.
+A minimalist, dark-themed directory of curated resources: GitHub applications, LLMs, models and AI tools,  with an English public interface and a simple admin area.
 
-> **Stack** — Next.js (App Router) · TypeScript · React · Tailwind CSS · SQLite (local file)
+> **Stack** Next.js (App Router) · TypeScript · React · Tailwind CSS · SQLite (local file)
 >
-> **This build has NO admin password and NO translation widget** — by request. No accounts, no passwords, no cookies, therefore **no SSL/TLS certificate is required** to run it.
+> **This build has NO admin password and NO translation widget**. No accounts, no passwords, no cookies, therefore **no SSL/TLS certificate is required** to run it.
 
 ---
 
@@ -16,7 +16,7 @@ A minimalist, dark-themed directory of curated resources — GitHub applications
 4. [Data storage](#data-storage)
 5. [Admin area (no password)](#admin-area-no-password)
 6. [Backup & restore](#backup--restore)
-7. [Database migrations & initialization](#database-migrations--initialization)
+7. [Database migrations & initialization](#database-migrations/initialization)
 8. [Security notes](#security-notes)
 9. [Deployment](#deployment)
 10. [Project structure](#project-structure)
@@ -32,11 +32,11 @@ Requirements: **Node.js ≥ 20.9** (Node 24 recommended) and npm.
 
 ```bash
 npm install          # installs Next.js, better-sqlite3, …
-cp .env.example .env # optional — everything has sensible defaults
+cp .env.example .env # optional. Everything has sensible defaults
 npm run dev          # http://localhost:3000
 ```
 
-Open <http://localhost:3000> for the public list and <http://localhost:3000/admin> to manage it (no login screen — the dashboard opens directly).
+Open <http://localhost:3000> for the public list and <http://localhost:3000/admin> to manage it (no login screen. The dashboard opens directly).
 
 Production build:
 
@@ -58,7 +58,7 @@ npm run start        # serves the production build on PORT (default 3000)
 
 ## Environment variables
 
-All optional — there is **no secret to configure** (no passwords, no sessions). Copy `.env.example` to `.env` only to override defaults.
+All optional.There is **no secret to configure** (no passwords, no sessions). Copy `.env.example` to `.env` only to override defaults.
 
 | Variable            | Default                 | Description                                                                 |
 | ------------------- | ----------------------- | --------------------------------------------------------------------------- |
@@ -66,11 +66,11 @@ All optional — there is **no secret to configure** (no passwords, no sessions)
 | `DATABASE_FILE`     | `hashfork.sqlite`       | Database file name inside `DATA_DIR`.                                        |
 | `APP_URL`           | `http://localhost:3000` | Public origin (metadata base URL + host allow-list for write requests).     |
 | `TRUST_PROXY`       | `true`                  | Trust `X-Forwarded-For` / `X-Forwarded-Host` (set `false` when not behind a proxy). |
-| `ENABLE_HSTS`       | `false`                 | Send `Strict-Transport-Security` — enable **only** when serving over HTTPS. |
+| `ENABLE_HSTS`       | `false`                 | Send `Strict-Transport-Security`. Enable **only** when serving over HTTPS. |
 
 ## Data storage
 
-Everything lives in **one local SQLite database** — no external database service (no Supabase, Firebase, MongoDB Atlas, hosted SQL, Airtable, Notion …). Browser `localStorage` is never used as a database.
+Everything lives in **one local SQLite database**. No external database service (no Supabase, Firebase, MongoDB Atlas, hosted SQL, Airtable, Notion …). Browser `localStorage` is never used as a database.
 
 ```
 data/                       ← DATA_DIR (back this up)
@@ -87,9 +87,11 @@ All reads/writes go through a repository layer (`lib/db/repositories/*`). React 
 
 ## Admin area (no password)
 
-`/admin` is the full content-management screen (main page title, categories, resources, backup tools). It opens **without any login** — there is no password, no account and no session cookie. That is exactly why **no SSL certificate is required**: the app never stores or transmits credentials.
+`/admin` is the full content-management screen (main page title, categories, resources, backup tools). It opens **without any login**. There is no password, no account and no session cookie. That is exactly why **no SSL certificate is required**: the app never stores or transmits credentials.
 
-> ⚠️ **Know what this means.** Anyone who can reach `/admin` (and the `/api/*` write endpoints) can change your content. That is fine on a private machine, a LAN tool or behind a protective reverse proxy — it is **not** fine on an unauthenticated public URL. If the instance is exposed to people you don't trust, gate it at the server layer before it reaches Node:
+The **Resources** section carries the same filter bar as the public list (category, Tested / Non-tested and substring search — all combined). Editing is protected against accidental loss: closing or switching away from a category/resource form that holds unsaved changes opens a dialog offering **Save**, **Discard changes** or **Keep editing** (changes are compared with the saved values, so edits that were typed and then reverted never warn). A native browser prompt guards closing the tab or reloading.
+
+> ⚠️ **Know what this means.** Anyone who can reach `/admin` (and the `/api/*` write endpoints) can change your content. That is fine on a private machine, a LAN tool or behind a protective reverse proxy. It is **not** fine on an unauthenticated public URL. If the instance is exposed to people you don't trust, gate it at the server layer before it reaches Node:
 >
 > - **nginx / Caddy basic auth** on `/admin` and `/api` (the public list at `/` stays open);
 > - an **IP allow-list** or VPN-only binding (`127.0.0.1:3000` behind the proxy);
@@ -113,7 +115,7 @@ The app itself still protects its write endpoints against **cross-origin "drive-
 
 Because the data is local, back it up deliberately.
 
-### Option A — Export / Import (built in, recommended)
+### Option A. Export / Import (built in, recommended)
 
 In **Admin → Data & backup**:
 
@@ -130,10 +132,10 @@ In **Admin → Data & backup**:
   ```
 
 - **Import** restores such a file (validated entirely before writing, applied in one transaction):
-  - *Merge* — adds missing entries, never overwrites existing ones (duplicates are skipped).
-  - *Replace all* — deletes current categories/items first and therefore **requires explicit confirmation** in a dialog *and* `confirm: true` in the request.
+  - *Merge*  adds missing entries, never overwrites existing ones (duplicates are skipped).
+  - *Replace all*  deletes current categories/items first and therefore **requires explicit confirmation** in a dialog *and* `confirm: true` in the request.
 
-### Option B — Copy the database file
+### Option B. Copy the database file
 
 ```bash
 # backup (consistent snapshot, even while running)
@@ -153,13 +155,13 @@ Adding a schema change = append a new `{ version: n, sql: … }` entry; existing
 
 ## Security notes
 
-- **No credentials at all** — no password hashing, no sessions, no cookies, no `Secure`-cookie/HTTPS constraint. TLS is optional (still recommended on public networks for privacy).
-- **Cross-origin request protection** — writes require a custom `x-requested-with: hashfork-admin` header (cross-site forms can't set it; cross-site `fetch` triggers a never-granted preflight), pass an `Origin` host allow-list check, and reject `Sec-Fetch-Site: cross-site`. This keeps third-party web pages from mutating your data through a visitor's browser.
-- **Input validation** — Zod schemas server-side (`lib/validation/schemas.ts`) for every payload; URLs must be `http(s)` (`javascript:`, `data:` … rejected), are length-capped and normalized (missing scheme → `https://`).
+- **No credentials at all**. No password hashing, no sessions, no cookies, no `Secure`-cookie/HTTPS constraint. TLS is optional (still recommended on public networks for privacy).
+- **Cross-origin request protection** . Writes require a custom `x-requested-with: hashfork-admin` header (cross-site forms can't set it; cross-site `fetch` triggers a never-granted preflight), pass an `Origin` host allow-list check, and reject `Sec-Fetch-Site: cross-site`. This keeps third-party web pages from mutating your data through a visitor's browser.
+- **Input validation**. Zod schemas server-side (`lib/validation/schemas.ts`) for every payload; URLs must be `http(s)` (`javascript:`, `data:` … rejected), are length-capped and normalized (missing scheme → `https://`).
 - **XSS** — item names/descriptions are rendered as plain text by React (auto-escaped); never as raw HTML.
-- **Security headers** (`middleware.ts`) — strict self-contained `Content-Security-Policy` (no third-party origins at all), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`, `Cross-Origin-Opener-Policy`, `Cross-Origin-Resource-Policy`, optional HSTS. `upgrade-insecure-requests` is deliberately **not** set so plain-HTTP deployments keep working.
-- **Error handling** — user-facing English messages, no stack traces/SQL leaked; details are logged server-side.
-- **Rate limiting** — none is required (there is no login to brute-force). If you expose the write API publicly, do the rate limiting at the reverse proxy.
+- **Security headers** (`middleware.ts`). Strict self-contained `Content-Security-Policy` (no third-party origins at all), `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Referrer-Policy`, `Permissions-Policy`, `Cross-Origin-Opener-Policy`, `Cross-Origin-Resource-Policy`, optional HSTS. `upgrade-insecure-requests` is deliberately **not** set so plain-HTTP deployments keep working.
+- **Error handling**. User-facing English messages, no stack traces/SQL leaked; details are logged server-side.
+- **Rate limiting**. None is required (there is no login to brute-force). If you expose the write API publicly, do the rate limiting at the reverse proxy.
 
 ## Deployment
 
@@ -185,7 +187,7 @@ Run it under systemd / pm2 / Docker. A TLS-terminating proxy (Caddy, nginx) is o
 docker compose up --build -d     # data lives in the named volume "hashfork-data"
 ```
 
-See `Dockerfile` and `docker-compose.yml`. The volume is what makes the database durable — without it the data disappears with the container.
+See `Dockerfile` and `docker-compose.yml`. The volume is what makes the database durable, without it the data disappears with the container.
 
 The runtime image runs Next.js' **standalone server** (`node server.js` on `.next/standalone`, produced by `output: 'standalone'` in `next.config.mjs`) and copies `.next/static` + `public` into it, since the standalone bundle ships without assets. Do **not** change the container command to `npm run start`: `next start` does not work with a standalone build and will crash-loop the container.
 
@@ -197,9 +199,9 @@ The runtime image runs Next.js' **standalone server** (`node server.js` on `.nex
 | Fly.io | Volumes | Create a volume (`fly volumes create hashfork_data`) and mount it at the `DATA_DIR` path. |
 | Railway / Render | Volumes | Attach a persistent volume and set `DATA_DIR` to its mount path. |
 | AWS ECS / Fargate, Cloud Run | Only with mounted EFS/EBS | Attach persistent storage or the file system is ephemeral. |
-| **Vercel / Netlify (serverless)** | **No** | The file system is **ephemeral**: SQLite is not durable there. Use a persistent VM/container (or add a PostgreSQL repository implementation — the repository layer exists for exactly this). |
+| **Vercel / Netlify (serverless)** | **No** | The file system is **ephemeral**: SQLite is not durable there. Use a persistent VM/container (or add a PostgreSQL repository implementation. The repository layer exists for exactly this). |
 
-Do **not** assume a local SQLite file is persistent on an ephemeral file system. If your platform has no persistent volume, the data will be lost on redeploy — that is a platform property, not something the app can fix.
+Do **not** assume a local SQLite file is persistent on an ephemeral file system. If your platform has no persistent volume, the data will be lost on redeploy. That is a platform property, not something the app can fix.
 
 ## Project structure
 
@@ -212,43 +214,56 @@ app/
   api/…                    # REST API (categories, items, export, import)
 components/
   Header.tsx, Directory.tsx, ItemRow.tsx, LinkIcons.tsx
-  admin/                   # AdminDashboard, ItemForm, ConfirmDialog, DataTools, AdminLayout
+  ResourceFilters.tsx      # shared filter bar (category / Tested / search)
+  DescriptionText.tsx      # two-line description + full-text hover tooltip
+  admin/                   # AdminDashboard, ItemForm, ConfirmDialog,
+                           # UnsavedChangesDialog, DataTools, AdminLayout
 lib/
   db/                      # SQLite client, schema migrations, error helpers
   db/repositories/         # categories, items (data-access layer)
   http/                    # api helpers, cross-origin mutation guard
   validation/              # Zod schemas + URL normalization
+  filtering.ts             # shared category / status / substring-search filter
+  unsaved.ts               # unsaved-changes (form draft) comparison helpers
   services/backup.ts       # export / import logic
   api/admin-client.ts      # typed fetch client used by the admin UI
 middleware.ts              # security headers + CSP
-tests/                     # Vitest suite
+tests/                     # Vitest suite (unit + jsdom UI tests)
 data/                      # SQLite database (created at runtime, git-ignored)
 ```
 
 ## Testing
 
 ```bash
-npm test          # 69 tests across 6 files
+npm test          # 130 tests across 10 files
 ```
 
 Coverage includes: item CRUD with full/partial/empty payloads, URL validation & normalization, the “Tested” check date (stamped when the checkbox is checked, kept across edits, cleared when unchecked), category CRUD, **category deletion keeping its items**, category filtering, site settings (default + customized main page title, validation), cross-origin protection (missing header / cross-site origin / Sec-Fetch-Site / malformed Origin), "mutations need no credentials" and "auth endpoints + auth tables are gone", malformed & oversized input, and backup export/import (merge, replace-with-confirmation, malformed files).
+
+The newer behaviour is covered as well:
+
+- **Shared filtering** (`tests/filtering.test.ts`). Case-insensitive substring search over name/description/comment, category + Tested/Non-tested + search combinations, empty queries, resources without a category.
+- **Unsaved-changes detection** (`tests/unsaved.test.ts`). Draft normalization (trimmed text, normalized URLs, clamped rating), reverted edits staying clean, inline "new category" handling, category/title name comparison.
+- **Public list UI** (`tests/ui-directory.test.tsx`, jsdom).Search field placement next to *Non-tested*, filter combinations with live typing, no-match state, two-line description clamping, full description on hover and keyboard focus, empty descriptions.
+- **Admin UI** (`tests/ui-admin.test.tsx`, jsdom). The same filter combinations on the dashboard, and the unsaved-changes guard: normal leave without edits, the Save / Discard changes / Keep editing dialog, saving before switching to another resource, reverted edits not warning, category rename protection, and the navigation guard.
 
 ## Design & UX notes
 
 - Colors are limited to `#141414` (background) and `#dedede` (foreground); every other tone is an opacity variation of those two.
 - The interface is in English.
 - The page title (default **The HashFork List**) is displayed centered in the header and used as the browser tab title. The admin can change it in **Admin → Main page** (stored in the `settings` table).
-- Public list is a compact vertical list (not card-heavy): **line 1** shows the resource name on the left, immediately to its right *Added on &lt;date&gt;* (the creation date, stamped automatically from the OS date when the resource is created), then its link icons (Website, GitHub, YouTube, Hugging Face — in that order) and, on the right, the review metadata: *Tested on &lt;date&gt;* (when the checkbox is checked — the date is when the admin checked it), the yellow star notation (only the rated 1–5 stars are shown — none when unrated), and a *Comment* link that pops the comment up on hover. **Line 2** is the description. Icons render **only** for provided URLs and open in a new tab with `rel="noopener noreferrer"`.
-- Categories are dynamic. The category filter is a drop-down menu (**“All”** is selected by default); to its right, two checkboxes — **Tested** and **Non-tested** — narrow the list down to tested and/or non-tested resources (both checked by default = show everything). Filtering toggles row visibility in the DOM — instant, zero re-rendering.
+- Public list is a compact vertical list (not card-heavy): **line 1** shows the resource name on the left, immediately to its right *Added on &lt;date&gt;* (the creation date, stamped automatically from the OS date when the resource is created), then its link icons (Website, GitHub, YouTube, Hugging Face — in that order) and, on the right, the review metadata: *Tested on &lt;date&gt;* (when the checkbox is checked — the date is when the admin checked it), the yellow star notation (only the rated 1–5 stars are shown — none when unrated), and a *Comment* link that pops the comment up on hover. **Line 2** is the description: clamped to **two rendered lines** (CSS line clamp.  Never a mid-word character cut), with the complete text popping up on hover or keyboard focus in a tooltip styled like the *Comment* popup (absolutely positioned, so the layout never shifts). Icons render **only** for provided URLs and open in a new tab with `rel="noopener noreferrer"`.
+- Categories are dynamic. The filter bar combines a category drop-down menu (**“All”** is selected by default), two checkboxes — **Tested** and **Non-tested** (both checked by default = show everything) — and a **Search** field to their right performing a case-insensitive **substring search** over the resource name, description and comment. All filters combine (e.g. *Category = All, Tested only, search `linux`* shows exactly the tested resources containing `linux`); an empty search keeps the previous behaviour untouched. Filtering toggles row visibility in the DOM — instant, zero re-rendering — and the same bar (with the same rules) sits next to the **Resources** heading of the admin dashboard.
 - Empty states: *“No resources yet.”*, *“No resources in this category.”*, *“No resources match the selected filters.”*, and a normal experience when no category exists at all.
 - Every field of an item is optional (even everything empty, with an explicit notice in the form); URLs are validated when provided. Each resource also carries admin review metadata: a **Tested** checkbox (the date of the check is saved automatically and displayed as *Tested on …*), a **1–5 star** rating and a **comment** (shown as a hover popup on the public list).
 - Newest items first (`createdAt DESC`). No manual ordering field — intentionally kept simple.
+- Admin editing is guarded against accidental loss: a category or resource form with unsaved changes cannot be closed or switched away from without an explicit **Save** / **Discard changes** / **Keep editing** choice (the *Add a resource*, *Edit*, *Rename*, *Cancel* buttons and the *View site* / logo links all go through the guard; closing the tab or reloading hits the native browser prompt). Changes are compared with the currently saved values —yping something and reverting it, or re-entering a value that normalizes to the stored one, is not a change.
 - Responsive from 320px to 1440px+: compact header, wrapped controls, 44px touch targets on mobile, no horizontal overflow.
-- Accessibility: semantic landmarks/headings, labeled controls, `aria-label` + tooltips on icon-only buttons, visible focus rings, `prefers-reduced-motion` respected, deletion always behind a confirmation dialog.
+- Accessibility: semantic landmarks/headings, labeled controls, `aria-label` + tooltips on icon-only buttons, visible focus rings, `prefers-reduced-motion` respected, deletion always behind a confirmation dialog, description tooltips reachable with the keyboard (focusable text + `aria-describedby`), and the unsaved-changes dialog traps focus and closes on Escape.
 
 ## Troubleshooting
 
-- **I want the admin area protected** — put basic auth / an IP allow-list / a VPN gate in front of `/admin` and `/api` at the reverse proxy (see [Admin area (no password)](#admin-area-no-password)). The app intentionally ships without a login.
-- **`better-sqlite3` fails to install** — it ships prebuilt native binaries in its `prebuilds/` directory (e.g. `prebuilds/linux-x64.node`), but npm may still invoke `node-gyp` on it (it contains a `binding.gyp`), which fails on machines without a C++ toolchain, without a writable `~/.cache`, or without access to Node headers. Safe remedy: `npm ci --ignore-scripts` — no dependency lifecycle script is actually required (then verify with `npm test` and `npm run build`). When scripts do run, npm ≥ 11.19 must be allowed to run them: the project declares the policy in `package.json#allowScripts`.
-- **`SQLITE_CANTOPEN`** — `DATA_DIR` is not writable; point it at a writable, persistent path.
-- **Lost data after a redeploy** — your platform's file system is ephemeral; see [Deployment](#deployment).
+- **I want the admin area protected**. Put basic auth / an IP allow-list / a VPN gate in front of `/admin` and `/api` at the reverse proxy (see [Admin area (no password)](#admin-area-no-password)). The app intentionally ships without a login.
+- **`better-sqlite3` fails to install**. It ships prebuilt native binaries in its `prebuilds/` directory (e.g. `prebuilds/linux-x64.node`), but npm may still invoke `node-gyp` on it (it contains a `binding.gyp`), which fails on machines without a C++ toolchain, without a writable `~/.cache`, or without access to Node headers. Safe remedy: `npm ci --ignore-scripts` — no dependency lifecycle script is actually required (then verify with `npm test` and `npm run build`). When scripts do run, npm ≥ 11.19 must be allowed to run them: the project declares the policy in `package.json#allowScripts`.
+- **`SQLITE_CANTOPEN`**. `DATA_DIR` is not writable; point it at a writable, persistent path.
+- **Lost data after a redeploy**. Your platform's file system is ephemeral; see [Deployment](#deployment).
