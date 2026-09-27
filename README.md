@@ -240,5 +240,5 @@ Coverage includes: item CRUD with full/partial/empty payloads, URL validation & 
 
 - **I want the admin area protected**. Put basic auth / an IP allow-list / a VPN gate in front of `/admin` and `/api` at the reverse proxy (see [Admin area (no password)](#admin-area-no-password)). The app intentionally ships without a login.
 - **`better-sqlite3` fails to install**. It ships prebuilt native binaries in its `prebuilds/` directory (e.g. `prebuilds/linux-x64.node`), but npm may still invoke `node-gyp` on it (it contains a `binding.gyp`), which fails on machines without a C++ toolchain, without a writable `~/.cache`, or without access to Node headers. Safe remedy: `npm ci --ignore-scripts`. No dependency lifecycle script is actually required (then verify with `npm test` and `npm run build`). When scripts do run, npm ≥ 11.19 must be allowed to run them: the project declares the policy in `package.json#allowScripts`.
-- **`SQLITE_CANTOPEN`** — `DATA_DIR` is not writable; point it at a writable, persistent path.
+- **`SQLITE_CANTOPEN`**. `DATA_DIR` is not writable; point it at a writable, persistent path.
 - **Lost data after a redeploy**. Your platform's file system is ephemeral; see [Deployment](#deployment).
