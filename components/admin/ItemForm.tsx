@@ -1,9 +1,22 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import {
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useState,
+  type FormEvent,
+  type Ref,
+} from 'react';
 import { Star } from 'lucide-react';
 import type { Category, CategoryWithCount, ItemPayload, ListItem } from '@/lib/types';
 import { formatOsDate } from '@/lib/format';
+import {
+  isItemDraftDirty,
+  itemDraftFromForm,
+  itemDraftFromItem,
+  NEW_CATEGORY_SELECTION,
+} from '@/lib/unsaved';
 import { normalizeUrl } from '@/lib/validation/url';
 
 const URL_FIELDS = [
@@ -21,7 +34,13 @@ type UrlFieldKey = (typeof URL_FIELDS)[number]['key'];
 type FieldKey = 'categoryId' | 'name' | 'description' | 'comment' | UrlFieldKey;
 type Fields = Record<FieldKey, string>;
 
-const NEW_CATEGORY_VALUE = '__new__';
+const NEW_CATEGORY_VALUE = NEW_CATEGORY_SELECTION;
+
+/** Imperative handle used by the unsaved-changes dialog to save the form. */
+export type ItemFormHandle = {
+  /** Runs validation + submission; resolves `true` only when the save worked. */
+  submit: () => Promise<boolean>;
+};
 
 type ItemFormProps = {
   categories: CategoryWithCount[];
@@ -29,8 +48,11 @@ type ItemFormProps = {
   submitting: boolean;
   serverIssues: string[];
   onCreateCategory: (name: string) => Promise<Category | null>;
-  onSubmit: (payload: ItemPayload) => void | Promise<void>;
+  onSubmit: (payload: ItemPayload) => void | Promise<boolean | void>;
   onCancel: () => void;
+  /** Reports whether the form holds unsaved changes (compared to `initial`). */
+  onDirtyChange?: (dirty: boolean) => void;
+  ref?: Ref<ItemFormHandle>;
 };
 
 function initialFields(initial?: ListItem | null): Fields {
@@ -63,6 +85,8 @@ export function ItemForm({
   onCreateCategory,
   onSubmit,
   onCancel,
+  onDirtyChange,
+  ref,
 }: ItemFormProps) {
   const [fields, setFields] = useState<Fields>(() => initialFields(initial));
   const [tested, setTested] = useState<boolean>(() => Boolean(initial?.tested));
@@ -90,6 +114,36 @@ export function ItemForm({
     fields.youtubeUrl.trim() === '' &&
     !tested &&
     rating === 0;
+
+  // Unsaved-changes detection: the current values are normalized exactly like
+  // the save path normalizes them, then compared with the loaded values, so
+  // reverted edits (or edits that would store the same value) are not "dirty".
+  const savedDraft = useMemo(() => itemDraftFromItem(initial), [initial]);
+  const currentDraft = useMemo(
+    () =>
+      itemDraftFromForm({
+        categoryId: fields.categoryId,
+        newCategoryName,
+        name: fields.name,
+        description: fields.description,
+        comment: fields.comment,
+        websiteUrl: fields.websiteUrl,
+        githubUrl: fields.githubUrl,
+        huggingFaceUrl: fields.huggingFaceUrl,
+        youtubeUrl: fields.youtubeUrl,
+        tested,
+        rating,
+      }),
+    [fields, newCategoryName, tested, rating],
+  );
+  const dirty = isItemDraftDirty(savedDraft, currentDraft);
+
+  useEffect(() => {
+    onDirtyChange?.(dirty);
+  }, [dirty, onDirtyChange]);
+
+  // Re-bound on every render so the handle always sees the current form state.
+  useImperativeHandle(ref, () => ({ submit: () => save() }));
 
   function setField(key: FieldKey, value: string) {
     setFields((current) => ({ ...current, [key]: value }));
@@ -122,9 +176,8 @@ export function ItemForm({
     }
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
+  /** Validates and submits; resolves `true` when the save actually succeeded. */
+  async function save(): Promise<boolean> {
     const nextErrors: Partial<Record<FieldKey, string>> = {};
     for (const urlField of URL_FIELDS) {
       const value = fields[urlField.key].trim();
@@ -133,7 +186,7 @@ export function ItemForm({
       }
     }
     setErrors(nextErrors);
-    if (Object.keys(nextErrors).length > 0) return;
+    if (Object.keys(nextErrors).length > 0) return false;
 
     let categoryId: string | null = null;
     if (fields.categoryId === NEW_CATEGORY_VALUE) {
@@ -160,7 +213,13 @@ export function ItemForm({
       rating: rating > 0 ? rating : null,
     };
 
-    await onSubmit(payload);
+    const result = await onSubmit(payload);
+    return result !== false;
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    await save();
   }
 
   return (

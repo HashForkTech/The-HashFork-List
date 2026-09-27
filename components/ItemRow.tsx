@@ -1,5 +1,7 @@
 import { Star } from 'lucide-react';
+import { DescriptionText } from '@/components/DescriptionText';
 import { LinkIcons } from '@/components/LinkIcons';
+import { buildSearchText } from '@/lib/filtering';
 import { formatOsDate } from '@/lib/format';
 import type { ListItem } from '@/lib/types';
 
@@ -13,10 +15,12 @@ import type { ListItem } from '@/lib/types';
  *                   admin checked the "Tested" checkbox), yellow stars (only
  *                   the rated ones — none when unrated), "Comment" link (when
  *                   a comment exists; hovering it pops the comment up)
- *   line 2 → description (muted, wraps naturally on small screens)
+ *   line 2 → description (muted, clamped to two lines; hovering it — or
+ *            focusing it with the keyboard — pops the full text up)
  *
- * Rendered on the server and kept as a static DOM subtree: the category and
- * "Tested" filters only toggle visibility, so the row DOM survives filtering.
+ * Rendered on the server and kept as a static DOM subtree: the category,
+ * "Tested" and search filters only toggle visibility, so the row DOM survives
+ * filtering. The searchable text rides on `data-item-search`.
  */
 
 function Stars({ rating }: { rating: number }) {
@@ -60,6 +64,7 @@ export function ItemRow({ item }: { item: ListItem }) {
   const name = item.name?.trim();
   const rating = Math.min(5, Math.max(0, Math.round(item.rating ?? 0)));
   const comment = item.comment?.trim();
+  const description = item.description?.trim();
   const addedAt = formatOsDate(item.createdAt);
   const testedAt = item.testedAt ? formatOsDate(item.testedAt) : '';
 
@@ -69,6 +74,7 @@ export function ItemRow({ item }: { item: ListItem }) {
       data-item-row="true"
       data-item-category={item.categoryId ?? ''}
       data-item-tested={item.tested ? 'true' : 'false'}
+      data-item-search={buildSearchText(item)}
       className="border-b border-paper/10 transition-colors duration-150 hover:bg-paper/[0.03]"
     >
       <div className="px-1 py-5 sm:px-3">
@@ -98,11 +104,7 @@ export function ItemRow({ item }: { item: ListItem }) {
             {comment ? <CommentLink id={item.id} comment={comment} /> : null}
           </div>
         </div>
-        {item.description?.trim() ? (
-          <p className="mt-1.5 max-w-3xl whitespace-pre-wrap break-words text-sm leading-relaxed text-paper/60 sm:text-[0.95rem]">
-            {item.description}
-          </p>
-        ) : null}
+        {description ? <DescriptionText id={item.id} description={description} /> : null}
       </div>
     </article>
   );
