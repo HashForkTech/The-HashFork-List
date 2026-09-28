@@ -6,6 +6,10 @@ A minimalist, dark-themed directory of curated resources: GitHub applications, L
 >
 > **This build has NO admin password and NO translation widget**. No accounts, no passwords, no cookies, therefore **no SSL/TLS certificate is required** to run it.
 
+<img width="721" height="342" alt="image" src="https://github.com/user-attachments/assets/366aa137-2c7e-4731-9933-77d64ef98f4e" /> 
+<img width="714" height="330" alt="image" src="https://github.com/user-attachments/assets/66fdde40-cc2c-4182-970b-59512162ce14" />
+<img width="722" height="1059" alt="image" src="https://github.com/user-attachments/assets/ac277ed5-a2f0-46a8-81c3-6f5716ca1a48" />
+
 ---
 
 ## Table of contents
@@ -21,8 +25,7 @@ A minimalist, dark-themed directory of curated resources: GitHub applications, L
 9. [Deployment](#deployment)
 10. [Project structure](#project-structure)
 11. [Testing](#testing)
-12. [Design & UX notes](#design--ux-notes)
-13. [Troubleshooting](#troubleshooting)
+12. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -247,19 +250,6 @@ The newer behaviour is covered as well:
 - **Public list UI** (`tests/ui-directory.test.tsx`, jsdom).Search field placement next to *Non-tested*, filter combinations with live typing, no-match state, two-line description clamping, full description on hover and keyboard focus, empty descriptions.
 - **Admin UI** (`tests/ui-admin.test.tsx`, jsdom). The same filter combinations on the dashboard, and the unsaved-changes guard: normal leave without edits, the Save / Discard changes / Keep editing dialog, saving before switching to another resource, reverted edits not warning, category rename protection, and the navigation guard.
 
-## Design & UX notes
-
-- Colors are limited to `#141414` (background) and `#dedede` (foreground); every other tone is an opacity variation of those two.
-- The interface is in English.
-- The page title (default **The HashFork List**) is displayed centered in the header and used as the browser tab title. The admin can change it in **Admin → Main page** (stored in the `settings` table).
-- Public list is a compact vertical list (not card-heavy): **line 1** shows the resource name on the left, immediately to its right *Added on &lt;date&gt;* (the creation date, stamped automatically from the OS date when the resource is created), then its link icons (Website, GitHub, YouTube, Hugging Face — in that order) and, on the right, the review metadata: *Tested on &lt;date&gt;* (when the checkbox is checked — the date is when the admin checked it), the yellow star notation (only the rated 1–5 stars are shown — none when unrated), and a *Comment* link that pops the comment up on hover. **Line 2** is the description: clamped to **two rendered lines** (CSS line clamp.  Never a mid-word character cut), with the complete text popping up on hover or keyboard focus in a tooltip styled like the *Comment* popup (absolutely positioned, so the layout never shifts). Icons render **only** for provided URLs and open in a new tab with `rel="noopener noreferrer"`.
-- Categories are dynamic. The filter bar combines a category drop-down menu (**“All”** is selected by default), two checkboxes — **Tested** and **Non-tested** (both checked by default = show everything) — and a **Search** field to their right performing a case-insensitive **substring search** over the resource name, description and comment. All filters combine (e.g. *Category = All, Tested only, search `linux`* shows exactly the tested resources containing `linux`); an empty search keeps the previous behaviour untouched. Filtering toggles row visibility in the DOM — instant, zero re-rendering — and the same bar (with the same rules) sits next to the **Resources** heading of the admin dashboard.
-- Empty states: *“No resources yet.”*, *“No resources in this category.”*, *“No resources match the selected filters.”*, and a normal experience when no category exists at all.
-- Every field of an item is optional (even everything empty, with an explicit notice in the form); URLs are validated when provided. Each resource also carries admin review metadata: a **Tested** checkbox (the date of the check is saved automatically and displayed as *Tested on …*), a **1–5 star** rating and a **comment** (shown as a hover popup on the public list).
-- Newest items first (`createdAt DESC`). No manual ordering field — intentionally kept simple.
-- Admin editing is guarded against accidental loss: a category or resource form with unsaved changes cannot be closed or switched away from without an explicit **Save** / **Discard changes** / **Keep editing** choice (the *Add a resource*, *Edit*, *Rename*, *Cancel* buttons and the *View site* / logo links all go through the guard; closing the tab or reloading hits the native browser prompt). Changes are compared with the currently saved values —yping something and reverting it, or re-entering a value that normalizes to the stored one, is not a change.
-- Responsive from 320px to 1440px+: compact header, wrapped controls, 44px touch targets on mobile, no horizontal overflow.
-- Accessibility: semantic landmarks/headings, labeled controls, `aria-label` + tooltips on icon-only buttons, visible focus rings, `prefers-reduced-motion` respected, deletion always behind a confirmation dialog, description tooltips reachable with the keyboard (focusable text + `aria-describedby`), and the unsaved-changes dialog traps focus and closes on Escape.
 
 ## Troubleshooting
 
