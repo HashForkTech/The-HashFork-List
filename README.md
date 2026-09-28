@@ -28,7 +28,7 @@ A minimalist, dark-themed directory of curated resources: GitHub applications, L
 
 ## Quick start
 
-Requirements: **Node.js ≥ 20.9** (Node 24 recommended) and npm.
+Requirements: **Node.js ≥ 24** and npm.
 
 ```bash
 npm install          # installs Next.js, better-sqlite3, …
