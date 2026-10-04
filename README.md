@@ -16,11 +16,13 @@ A self-hosted directory of curated resources: GitHub projects, LLMs, models and 
 
 **Public list** (`/`)
 
-- Resources grouped by category, each with a name, description, links and review metadata.
+- Resources grouped by category, each with a name, description, links, a category chip and review metadata.
 - Links are shown as icons: GitHub, website, Hugging Face, YouTube.
-- A "Tested" badge with the date it was checked, a star rating from 0 to 5, and an optional comment on hover.
-- Filter bar: category, Tested / Non-tested, and a case-insensitive search over name, description and comment. All three combine.
-- Descriptions are clamped to two lines, with the full text on hover or keyboard focus.
+- A "Tested" badge with the date it was checked, a star rating from 0 to 5 (drawn on a 5-slot scale), and an optional comment behind a "Comment" button (tap- and keyboard-friendly).
+- Filter bar: category, Tested / Non-tested, and a case-insensitive search over name, description and comment. All three combine, and a sort control orders the list by newest, name or rating.
+- A live result count ("12 of 31 resources") sits under the filter bar with a "Reset filters" shortcut. Filters and sort are mirrored into the URL query string (`/?category=…&tested=0&q=…&sort=rating`), so a view can be bookmarked, shared, and restored after a refresh.
+- Press `/` anywhere to jump to the search field; `Esc` clears it.
+- Descriptions are clamped to two lines; clicking/tapping, hovering or keyboard-focus reveals the full text in a popover.
 
 **Admin area** (`/admin`)
 
@@ -33,7 +35,7 @@ A self-hosted directory of curated resources: GitHub projects, LLMs, models and 
 
 - No authentication of any kind. Anyone who can reach `/admin` can edit content; see [Security model](#what-the-app-does-and-does-not-protect).
 - No external database or SaaS backend. Everything is one local SQLite file.
-- No third-party scripts, fonts or analytics; the Content-Security-Policy allow-lists nothing outside the app itself.
+- No third-party scripts, fonts or analytics; the Content-Security-Policy allow-lists nothing outside the app itself. The Inter typeface is self-hosted (bundled from `@fontsource-variable/inter` at build time, served from the same origin).
 
 ---
 
