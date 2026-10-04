@@ -289,6 +289,7 @@ app/
   page.tsx                      Public list, server-rendered
   layout.tsx, globals.css       English metadata, dark theme
   error.tsx, not-found.tsx      Error and 404 boundaries
+  opengraph-image.tsx           Social card drawn from the live title and item count
   admin/page.tsx                Admin dashboard (no login)
   admin/dashboard/page.tsx      Redirect to /admin, kept for old links
   api/                          REST API: categories, items, settings, export, import
@@ -296,6 +297,8 @@ components/
   Header.tsx, Directory.tsx, ItemRow.tsx
   ResourceFilters.tsx           Filter bar shared by public list and admin
   DescriptionText.tsx           Two-line description + full-text tooltip
+  CommentButton.tsx             Comment popover button (tap and keyboard friendly)
+  SkipLink.tsx                  Keyboard "skip to content" link
   LinkIcons.tsx, BrandIcon.tsx  Per-link icons (GitHub, web, Hugging Face, YouTube)
   admin/                        AdminDashboard, ItemForm, DataTools,
                                 ConfirmDialog, UnsavedChangesDialog, AdminLayout
@@ -305,7 +308,7 @@ lib/
   db/repositories/              categories, items, settings (the data-access layer)
   http/                         api response helpers, cross-origin mutation check + guard
   validation/                   Zod schemas, URL normalization
-  filtering.ts                  Category / Tested / substring-search filter logic
+  filtering.ts                  Filter + sort logic and the URL query (de)serialisation
   unsaved.ts                    Form-draft comparison for the unsaved-changes guard
   format.ts, logger.ts          Date formatting, server-side logging
   services/backup.ts            Export and import logic
@@ -319,7 +322,7 @@ data/                           SQLite database, created at runtime, git-ignored
 ## Testing
 
 ```bash
-npm test        # 130 tests across 10 files
+npm test        # 139 tests across 10 files
 ```
 
 What the suite pins down:
@@ -327,10 +330,10 @@ What the suite pins down:
 - **Data layer.** Item create / update with full, partial and empty payloads; URL validation and normalization; the Tested check date (stamped when the box is checked, kept across unrelated edits, cleared when unchecked); category create and update; deleting a category keeps its items; category filtering; site settings including the default and a customized page title.
 - **Security.** A mutation without the custom header, from a cross-site origin, or marked cross-site by `Sec-Fetch-Site` is refused; a malformed `Origin` is refused; mutations need no credentials; the old auth endpoints and auth tables are gone. Badly shaped and oversized input is rejected.
 - **Backup.** Export, merge import, replace import with and without confirmation, and malformed backup files.
-- **Shared filtering** (`tests/filtering.test.ts`). Case-insensitive substring search over name, description and comment; category + Tested/Non-tested + search combinations; empty queries; resources without a category.
+- **Shared filtering** (`tests/filtering.test.ts`). Case-insensitive substring search over name, description and comment; category + Tested/Non-tested + search combinations; empty queries; resources without a category; URL (de)serialisation of filters and sort, including a query that stays empty for the default view and defaults read back from a malformed query.
 - **Unsaved-changes detection** (`tests/unsaved.test.ts`). Draft normalization (trimmed text, normalized URLs, clamped rating); a reverted edit stays clean; inline "new category" handling; name comparison for categories and titles.
-- **Public list UI** (`tests/ui-directory.test.tsx`, jsdom). Search field placement next to *Non-tested*, filter combinations while typing, the no-match state, two-line description clamping, full description on hover and keyboard focus, empty descriptions.
-- **Admin UI** (`tests/ui-admin.test.tsx`, jsdom). The same filter combinations on the dashboard, plus the unsaved-changes guard: leaving normally with no edits, the Save / Discard / Keep editing dialog, saving before switching resources, reverted edits not warning, category-rename protection, and the navigation guard.
+- **Public list UI** (`tests/ui-directory.test.tsx`, jsdom). Search field placement next to *Non-tested*, filter combinations while typing, the no-match state, two-line description clamping, full description on hover and keyboard focus, empty descriptions, the tap-friendly comment popover, filters restored from and mirrored back into the query string, re-ordering by name and by rating, the live result count, and `/` focusing the search while `Esc` clears it.
+- **Admin UI** (`tests/ui-admin.test.tsx`, jsdom). The filter bar rendered to the right of the *Resources* heading and the same filter combinations on the dashboard, plus the unsaved-changes guard: leaving normally with no edits, the Save / Discard / Keep editing dialog, saving before switching resources, reverted edits not warning, a half-typed new resource protected the same way, category-rename protection, and the navigation guard.
 
 ## Troubleshooting
 
