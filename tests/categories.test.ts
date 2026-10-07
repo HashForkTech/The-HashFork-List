@@ -25,6 +25,24 @@ describe('categories', () => {
     expect(list.categories[0].itemCount).toBe(0);
   });
 
+  it('lists categories in alphabetical order regardless of creation order', async () => {
+    // created in deliberately unsorted order
+    for (const name of ['zoo', 'École', 'banana', 'Apple']) {
+      await categoryPost(apiRequest('/api/categories', { method: 'POST', body: { name } }));
+    }
+
+    const list = (await readJson(await categoriesGet())) as {
+      categories: Array<{ name: string }>;
+    };
+    // case- and accent-insensitive alphabetical order
+    expect(list.categories.map((category) => category.name)).toEqual([
+      'Apple',
+      'banana',
+      'École',
+      'zoo',
+    ]);
+  });
+
   it('rejects an empty category name', async () => {
     const res = await categoryPost(
       apiRequest('/api/categories', { method: 'POST', body: { name: '   ' } }),

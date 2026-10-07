@@ -19,6 +19,27 @@ function mapCategoryWithCount(row: CategoryWithCountRow): CategoryWithCount {
   return { ...mapCategory(row), itemCount: row.item_count };
 }
 
+/**
+ * Human alphabetical order: case- and accent-insensitive ("Docker" < "école" <
+ * "LLM"). Ties fall back to stricter comparisons so the order stays
+ * deterministic ("Apple" < "apple", equal names keep creation order).
+ */
+const collator = new Intl.Collator(undefined, { sensitivity: 'base' });
+
+function byName(a: Category, b: Category): number {
+  return (
+    collator.compare(a.name, b.name) ||
+    a.name.localeCompare(b.name) ||
+    a.createdAt.localeCompare(b.createdAt) ||
+    a.id.localeCompare(b.id)
+  );
+}
+
+/**
+ * Categories are always listed in alphabetical order — this is the single
+ * source for the public drop-down, the admin category list and the admin
+ * item-form drop-down.
+ */
 export function listCategories(db: DB): CategoryWithCount[] {
   const rows = db
     .prepare(
@@ -28,7 +49,7 @@ export function listCategories(db: DB): CategoryWithCount[] {
         ORDER BY c.created_at ASC, c.name ASC`,
     )
     .all() as CategoryWithCountRow[];
-  return rows.map(mapCategoryWithCount);
+  return rows.map(mapCategoryWithCount).sort(byName);
 }
 
 export function listCategoriesRaw(db: DB): Category[] {
