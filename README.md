@@ -6,6 +6,10 @@ A self-hosted directory of curated resources: GitHub projects, LLMs, models and 
 
 **This build has no admin login.** No accounts, no passwords, no cookies, so it also needs no SSL/TLS certificate to run.
 
+**Authentication option:** The same app is also available with authentication in [The HashFork List with authentication](https://github.com/HashForkTech/The-HashFork-List-with-authentication).
+
+**Customize your list name:** Open `/admin`, change **Page title** under **Main page**, and click **Save**.
+
 ![The public list: a filter bar with a category menu, Tested and Non-tested checkboxes, a search field and a sort menu, above resource rows that each show a name, an added date, a category chip, link icons, a tested date, a five slot star rating, a Comment button and a two line description](docs/screenshots/public-list.png)
 
 ---
@@ -24,7 +28,7 @@ A self-hosted directory of curated resources: GitHub projects, LLMs, models and 
 
 **Admin area** (`/admin`)
 
-- Edit the main page title, categories and resources; export and import the data.
+- Change the list name (main page title), manage categories and resources, and export or import data.
 - Same filter bar as the public list.
 - Forms refuse to close with unsaved changes: you get **Save / Discard changes / Keep editing**.
 - Deleting a category keeps its resources (they simply become uncategorized).
