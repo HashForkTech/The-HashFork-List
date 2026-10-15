@@ -10,7 +10,7 @@ A self-hosted directory of curated resources: GitHub projects, LLMs, models and 
 
 **Customize your list name:** Open `/admin`, change **Page title** under **Main page**, and click **Save**.
 
-![The public list: a filter bar with a category menu, Tested and Non-tested checkboxes, a search field and a sort menu, above resource rows that each show a name, an added date, a category chip, link icons, a tested date, a five slot star rating, a Comment button and a two line description](docs/screenshots/public-list.png)
+![The public list with category, tested status, search and sort controls above resource rows showing added and tested dates, category chips, link icons, GitHub star counts, Comment buttons and descriptions](docs/screenshots/public-list.png)
 
 ---
 
@@ -63,31 +63,31 @@ A self-hosted directory of curated resources: GitHub projects, LLMs, models and 
 
 ## Screenshots
 
-Every image below comes from a production build (`npm run build` then `npm run start`) running against a demo database with 17 resources in 5 categories. The image at the top of this file is the default public view.
+These screenshots show the current production build running against a demo database with 17 resources in 5 categories. GitHub star counts are illustrative values entered manually for the screenshots, rather than live GitHub totals. The image at the top of this file is the default public view.
 
 ### Public list
 
-Filters and sort mirrored into the URL (`/?category=inference-engines&sort=rating`), with the live result count, the "Reset filters" shortcut, and an open comment popover.
+The Inference Engines category sorted by GitHub stars, most first. Filters and sort are mirrored into the URL (`/?category=inference-engines&sort=githubStars`), with the live result count, the "Reset filters" shortcut, and an open comment popover.
 
-![The public list filtered to the Inference Engines category and sorted by best rated, showing "4 of 17 resources", a "Reset filters" link, category chips, star ratings, and an open comment popover under the first row](docs/screenshots/public-list-filters.png)
+![The Inference Engines category sorted by GitHub stars, showing 4 of 17 resources, Reset filters, GitHub counts with one yellow star each, and an open comment under Ollama](docs/screenshots/public-list-filters.png)
 
-The same list on a phone-sized viewport (390 px wide): the filter bar wraps to two rows and every resource stacks its metadata under the title.
+The same list on a phone: the filter controls wrap above the resources, and each resource's category, links, tested date and GitHub count stack below its title.
 
-![The public list on a 390 pixel wide viewport, with a two row filter bar above stacked resource rows](docs/screenshots/public-list-mobile.png)
+![The public list on a phone with wrapped category, search, tested status and sorting controls, followed by resource rows with GitHub star counts](docs/screenshots/public-list-mobile.png)
 
 ### Admin area
 
-The dashboard at `/admin`: the main page title and the category list with its per-category resource counts.
+The dashboard at `/admin`: the main page title and the category dropdown. Only the selected category is shown below the menu, with its resource count and Rename and Delete buttons.
 
-![The admin dashboard: header with an ADMIN badge and a View site link, a page title field with a Save button, and a category list where every row shows the name, the number of resources, and Rename and Delete buttons](docs/screenshots/admin-dashboard.png)
+![The Admin dashboard with its page title field, a category dropdown set to Chat Interfaces, and one category row showing 4 resources with Rename and Delete buttons](docs/screenshots/admin-dashboard.png)
 
-The Resources section, which carries the same filter bar as the public list.
+The Resources section carries the same category, tested status and search filters as the public list. Resource cards show the saved GitHub count alongside their review information.
 
-![The admin Resources section: filter bar with category menu, Tested and Non-tested checkboxes, search field and an Add a resource button, above resource cards with category chips, a Tested badge, star ratings, the comment text, and Edit and Delete buttons](docs/screenshots/admin-resources.png)
+![Admin resource cards for Ollama, Qdrant and Home Assistant, with category chips, Tested badges, GitHub star counts, descriptions, comments, link icons, and Edit and Delete buttons below the resource filters](docs/screenshots/admin-resources.png)
 
-The resource editor for a single entry: category, name, description, the four link fields, the star rating, the Tested checkbox with its stored check date, and the comment.
+The resource editor includes a GitHub label with one yellow star and a number field. Enter the count manually or leave it blank to hide it; the Tested checkbox, stored check date and comment remain below it.
 
-![The admin resource editor filled in for Home Assistant: category set to Home Automation, name, description, website, GitHub and YouTube links, five filled stars, a checked Tested box showing "Last checked on 2026-10-03", a comment, and Save and Cancel buttons](docs/screenshots/admin-resource-editor.png)
+![The Home Assistant resource editor with category and link fields, a GitHub star count of 83000, a checked Tested box with its stored date, a comment, and Save and Cancel buttons](docs/screenshots/admin-resource-editor.png)
 
 ---
 
@@ -339,8 +339,8 @@ What the suite pins down:
 - **Security.** A mutation without the custom header, from a cross-site origin, or marked cross-site by `Sec-Fetch-Site` is refused; a malformed `Origin` is refused; mutations need no credentials; the old auth endpoints and auth tables are gone. Badly shaped and oversized input is rejected.
 - **Backup.** Export, merge import, replace import with and without confirmation, and malformed backup files.
 - **Shared filtering** (`tests/filtering.test.ts`). Case-insensitive substring search over name, description and comment; category + Tested/Non-tested + search combinations; empty queries; resources without a category; URL (de)serialisation of filters and sort, including a query that stays empty for the default view and defaults read back from a malformed query.
-- **Unsaved-changes detection** (`tests/unsaved.test.ts`). Draft normalization (trimmed text, normalized URLs, clamped rating); a reverted edit stays clean; inline "new category" handling; name comparison for categories and titles.
-- **Public list UI** (`tests/ui-directory.test.tsx`, jsdom). Search field placement next to *Non-tested*, filter combinations while typing, the no-match state, two-line description clamping, full description on hover and keyboard focus, empty descriptions, the tap-friendly comment popover, filters restored from and mirrored back into the query string, re-ordering by name and by rating, the live result count, and `/` focusing the search while `Esc` clears it.
+- **Unsaved-changes detection** (`tests/unsaved.test.ts`). Draft normalization (trimmed text, normalized URLs, numeric or blank GitHub counts); a reverted edit stays clean; inline "new category" handling; name comparison for categories and titles.
+- **Public list UI** (`tests/ui-directory.test.tsx`, jsdom). Search field placement next to *Non-tested*, filter combinations while typing, the no-match state, two-line description clamping, full description on hover and keyboard focus, empty descriptions, the tap-friendly comment popover, filters restored from and mirrored back into the query string, re-ordering by name and by GitHub count, the live result count, and `/` focusing the search while `Esc` clears it.
 - **Admin UI** (`tests/ui-admin.test.tsx`, jsdom). The filter bar rendered to the right of the *Resources* heading and the same filter combinations on the dashboard, plus the unsaved-changes guard: leaving normally with no edits, the Save / Discard / Keep editing dialog, saving before switching resources, reverted edits not warning, a half-typed new resource protected the same way, category-rename protection, and the navigation guard.
 
 ## Troubleshooting
