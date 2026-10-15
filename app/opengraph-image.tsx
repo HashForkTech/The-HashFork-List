@@ -60,7 +60,7 @@ export default function OpengraphImage() {
           }}
         >
           <div style={{ display: 'flex', maxWidth: 760 }}>
-            GitHub projects · LLMs · models · AI tools — each with a tested-on date and rating
+            GitHub projects · LLMs · models · AI tools — each with a tested-on date and GitHub stars
           </div>
           <div style={{ display: 'flex', fontWeight: 700, color: '#dedede', fontSize: 30 }}>
             {itemCount} resources

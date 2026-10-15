@@ -106,6 +106,16 @@ export const MIGRATIONS: Migration[] = [
       );
     `,
   },
+  {
+    // GitHub popularity is independent of the former personal 0–5 rating.
+    // Existing resources start without a count until the admin enters one.
+    version: 6,
+    sql: `
+      ALTER TABLE items ADD COLUMN github_stars INTEGER
+        CHECK (github_stars IS NULL OR
+          (typeof(github_stars) = 'integer' AND github_stars BETWEEN 0 AND 9007199254740991));
+    `,
+  },
 ];
 
 export function migrate(db: DB): void {

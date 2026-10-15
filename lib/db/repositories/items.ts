@@ -13,7 +13,7 @@ type ItemRow = {
   youtube_url: string | null;
   tested: number;
   tested_at: string | null;
-  rating: number;
+  github_stars: number | null;
   comment: string | null;
   created_at: string;
   updated_at: string;
@@ -31,7 +31,7 @@ function mapItem(row: ItemRow): ListItem {
     youtubeUrl: row.youtube_url,
     tested: Boolean(row.tested),
     testedAt: row.tested_at,
-    rating: row.rating ?? 0,
+    githubStars: row.github_stars ?? null,
     comment: row.comment,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -63,10 +63,9 @@ export function getItem(db: DB, id: string): ListItem | null {
   return row ? mapItem(row) : null;
 }
 
-/** Ratings are stored as an integer 0–5 (0 = not rated). */
-function normalizeRating(value: number | null | undefined): number {
-  if (typeof value !== 'number' || !Number.isFinite(value)) return 0;
-  return Math.min(5, Math.max(0, Math.round(value)));
+/** Missing counts stay null; zero is a valid GitHub count. */
+function normalizeGithubStars(value: number | null | undefined): number | null {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value >= 0 ? value : null;
 }
 
 /** Timestamps are stored as ISO strings; invalid values are rejected upstream. */
@@ -82,10 +81,10 @@ export function createItem(db: DB, payload: ItemPayload, id: string = randomUUID
   const now = new Date().toISOString();
   db.prepare(
     `INSERT INTO items (id, category_id, name, description, github_url, website_url,
-                        huggingface_url, youtube_url, tested, tested_at, rating, comment,
+                        huggingface_url, youtube_url, tested, tested_at, github_stars, comment,
                         created_at, updated_at)
      VALUES (@id, @categoryId, @name, @description, @githubUrl, @websiteUrl,
-             @huggingFaceUrl, @youtubeUrl, @tested, @testedAt, @rating, @comment,
+             @huggingFaceUrl, @youtubeUrl, @tested, @testedAt, @githubStars, @comment,
              @createdAt, @updatedAt)`,
   ).run({
     id,
@@ -99,7 +98,7 @@ export function createItem(db: DB, payload: ItemPayload, id: string = randomUUID
     tested: payload.tested ? 1 : 0,
     // The "Tested" check date is stamped when the checkbox is checked.
     testedAt: payload.tested ? (normalizeTimestamp(payload.testedAt) ?? now) : null,
-    rating: normalizeRating(payload.rating),
+    githubStars: normalizeGithubStars(payload.githubStars),
     comment: payload.comment ?? null,
     createdAt: now,
     updatedAt: now,
@@ -120,7 +119,7 @@ export function updateItem(db: DB, id: string, payload: ItemPayload): ListItem |
       payload.huggingFaceUrl !== undefined ? payload.huggingFaceUrl : existing.huggingFaceUrl,
     youtubeUrl: payload.youtubeUrl !== undefined ? payload.youtubeUrl : existing.youtubeUrl,
     tested: payload.tested !== undefined ? payload.tested : existing.tested,
-    rating: payload.rating !== undefined ? payload.rating : existing.rating,
+    githubStars: payload.githubStars !== undefined ? payload.githubStars : existing.githubStars,
     comment: payload.comment !== undefined ? payload.comment : existing.comment,
   };
   const now = new Date().toISOString();
@@ -144,7 +143,7 @@ export function updateItem(db: DB, id: string, payload: ItemPayload): ListItem |
             youtube_url = @youtubeUrl,
             tested = @tested,
             tested_at = @testedAt,
-            rating = @rating,
+            github_stars = @githubStars,
             comment = @comment,
             updated_at = @updatedAt
       WHERE id = @id`,
@@ -159,7 +158,7 @@ export function updateItem(db: DB, id: string, payload: ItemPayload): ListItem |
     youtubeUrl: merged.youtubeUrl ?? null,
     tested: merged.tested ? 1 : 0,
     testedAt,
-    rating: normalizeRating(merged.rating),
+    githubStars: normalizeGithubStars(merged.githubStars),
     comment: merged.comment ?? null,
     updatedAt: now,
   });
@@ -183,10 +182,10 @@ export function insertItemRaw(db: DB, item: ListItem): boolean {
   const info = db
     .prepare(
       `INSERT INTO items (id, category_id, name, description, github_url, website_url,
-                          huggingface_url, youtube_url, tested, tested_at, rating, comment,
+                          huggingface_url, youtube_url, tested, tested_at, github_stars, comment,
                           created_at, updated_at)
        VALUES (@id, @categoryId, @name, @description, @githubUrl, @websiteUrl,
-               @huggingFaceUrl, @youtubeUrl, @tested, @testedAt, @rating, @comment,
+               @huggingFaceUrl, @youtubeUrl, @tested, @testedAt, @githubStars, @comment,
                @createdAt, @updatedAt)`,
     )
     .run({
@@ -200,7 +199,7 @@ export function insertItemRaw(db: DB, item: ListItem): boolean {
       youtubeUrl: item.youtubeUrl ?? null,
       tested: item.tested ? 1 : 0,
       testedAt: normalizeTimestamp(item.testedAt),
-      rating: normalizeRating(item.rating),
+      githubStars: normalizeGithubStars(item.githubStars),
       comment: item.comment ?? null,
       createdAt: item.createdAt,
       updatedAt: item.updatedAt,

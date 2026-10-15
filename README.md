@@ -20,15 +20,17 @@ A self-hosted directory of curated resources: GitHub projects, LLMs, models and 
 
 - Resources grouped by category, each with a name, description, links, a category chip and review metadata.
 - Links are shown as icons: GitHub, website, Hugging Face, YouTube.
-- A "Tested" badge with the date it was checked, a star rating from 0 to 5 (drawn on a 5-slot scale), and an optional comment behind a "Comment" button (tap- and keyboard-friendly).
-- Filter bar: category, Tested / Non-tested, and a case-insensitive search over name, description and comment. All three combine, and a sort control orders the list by newest, name or rating.
-- A live result count ("12 of 31 resources") sits under the filter bar with a "Reset filters" shortcut. Filters and sort are mirrored into the URL query string (`/?category=…&tested=0&q=…&sort=rating`), so a view can be bookmarked, shared, and restored after a refresh.
+- A "Tested" badge with the date it was checked, a manually entered GitHub star count displayed as GitHub, one yellow star and the full number, and an optional comment behind a "Comment" button (tap- and keyboard-friendly). Blank counts are hidden; zero is shown.
+- Filter bar: category, Tested / Non-tested, and a case-insensitive search over name, description and comment. All three combine, and a sort control orders the list by newest, name or GitHub star count.
+- A live result count ("12 of 31 resources") sits under the filter bar with a "Reset filters" shortcut. Filters and sort are mirrored into the URL query string (`/?category=…&tested=0&q=…&sort=githubStars`), so a view can be bookmarked, shared, and restored after a refresh.
 - Press `/` anywhere to jump to the search field; `Esc` clears it.
 - Descriptions are clamped to two lines; clicking/tapping, hovering or keyboard-focus reveals the full text in a popover.
 
 **Admin area** (`/admin`)
 
 - Change the list name (main page title), manage categories and resources, and export or import data.
+- Select a category from a dropdown to see its resource count and use the existing Rename and Delete buttons.
+- Enter an optional non-negative whole number under GitHub stars when adding or editing a resource.
 - Same filter bar as the public list.
 - Forms refuse to close with unsaved changes: you get **Save / Discard changes / Keep editing**.
 - Deleting a category keeps its resources (they simply become uncategorized).
@@ -193,7 +195,7 @@ In **Admin → Data & backup**:
 ```json
 {
   "format": "the-hashfork-list/backup",
-  "version": 3,
+  "version": 4,
   "exportedAt": "2026-01-01T12:00:00.000Z",
   "categories": [],
   "items": []
@@ -201,6 +203,8 @@ In **Admin → Data & backup**:
 ```
 
 **Import** accepts such a file, in one of two modes. The whole file is validated before anything is written, and the import runs as a single transaction, so a bad file changes nothing.
+
+Version 4 includes `githubStars` on resources. Older backups still import; their personal ratings are not converted to GitHub counts. Existing databases upgrade automatically and keep counts blank until entered.
 
 - **Merge** adds what is missing and never overwrites; existing ids are skipped.
 - **Replace all** deletes the current categories and items first. It asks for explicit confirmation in a dialog *and* requires `confirm: true` in the request body.
